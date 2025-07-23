@@ -11,9 +11,9 @@ games = {}
 async def on_ready():
     print(f"{bot.user} is ready and online!")
 
-@bot.slash_command(name="tres", description="Create a game of Tres") # Create a slash command
-async def tres(ctx):
-    g = pregame.PreGame(None)
+@bot.slash_command(name="tres", description="Create a game of Tres")
+async def tres(ctx: discord.ApplicationContext, name: discord.Option(str, required=False)):
+    g = pregame.PreGame(name)
     games[g.uuid] = g
     await ctx.respond("", embed=g.info_embed(), view=g) # Send a message with our View class that contains the button
 
