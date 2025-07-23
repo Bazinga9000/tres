@@ -1,0 +1,3 @@
+{
+  "reportInvalidTypeForm": false // Pycord's type annotations don't like this setting being on
+}
