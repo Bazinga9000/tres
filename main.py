@@ -13,9 +13,9 @@ async def on_ready():
 
 @bot.slash_command(name="tres", description="Create a game of Tres") # Create a slash command
 async def tres(ctx):
-    g = pregame.PreGame()
+    g = pregame.PreGame(None)
     games[g.uuid] = g
-    await ctx.respond("**Game created!**", view=g.view) # Send a message with our View class that contains the button
+    await ctx.respond("", embed=g.info_embed(), view=g) # Send a message with our View class that contains the button
 
 
 bot.run(os.getenv('TOKEN')) # run the bot with the token
