@@ -24,7 +24,7 @@ class PreGame(discord.ui.View):
             self.name = name
 
         # Players in the game
-        self.players = []
+        self.players = [self.host]
 
     def info_embed(self):
         embed = discord.Embed(
