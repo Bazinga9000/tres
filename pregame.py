@@ -1,16 +1,30 @@
 import discord
 import uuid
+import game_db
+import game
 
 class PreGame(discord.ui.View):
-    def __init__(self, name):
+    def __init__(self, host, channel, name):
         super().__init__()
-        self.uuid = uuid.uuid4()
-        self.players = []
 
+        # Generate a UUID for this game and add it to the global DB
+        self.uuid = uuid.uuid4()
+        game_db.games[self.uuid] = self
+
+        # The person who started the game
+        self.host = host
+
+        # The channel in which the game is being played
+        self.channel = channel
+
+        # The name of the game
         if name is None:
             self.name = f"Game {self.uuid}"
         else:
             self.name = name
+
+        # Players in the game
+        self.players = []
 
     def info_embed(self):
         embed = discord.Embed(
@@ -27,6 +41,20 @@ class PreGame(discord.ui.View):
 
 
     # Interactions
+    @discord.ui.button(label="Start Game", row=0, style=discord.ButtonStyle.blurple)
+    async def start_callback(self, button, interaction):
+        if interaction.user != self.host:
+            return await interaction.respond("Only the host can start the game!", ephemeral=True)
+
+        if len(self.players) == 0:
+            return await interaction.respond("You can't start a game with zero players in it!", ephemeral=True)
+
+        # Generate a full game from this pregame (the init will automatically overwrite the DB)
+        started_game = game.Game(self)
+        self.disable_all_items()
+        await interaction.edit(embed=self.info_embed(), view=self)
+        await started_game.on_start()
+
     async def update_info(self, interaction):
         await interaction.edit(embed=self.info_embed(), view=self)
 
