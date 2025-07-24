@@ -90,9 +90,7 @@ class Game:
             async def draw_callback(interaction):
                 self.hands[player].append(self.deck.pop())
                 await self.channel.send(f"{player.display_name} drew a card!")
-                await interaction.response.defer()
-                await interaction.delete_original_response()
-                await interaction.respond(view=self.card_play_view(player, can_pass=True), ephemeral=True)
+                await interaction.edit(view=self.card_play_view(player, can_pass=True))
 
             draw_button.callback = draw_callback
 
