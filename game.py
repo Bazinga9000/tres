@@ -1,4 +1,7 @@
 import discord
+from card.reverse_card import ReverseCard
+from card.reverse_skip import ReverseSkipCard
+from card.skip_card import SkipCard
 import game_db
 import random
 from card.number_card import NumberCard
@@ -26,8 +29,11 @@ class Game:
         for c in [CardColor.RED, CardColor.ORANGE, CardColor.YELLOW, CardColor.GREEN, CardColor.BLUE, CardColor.PURPLE]:
             for n in range(1,16):
                 self.deck.append(NumberCard(c,n))
-            for _ in range(2): # Draw 2s
-                self.deck.append(DrawCard(c, 2))
+            for _ in range(2):
+                self.deck.append(DrawCard(c, 2))     # Draw 2s
+                self.deck.append(ReverseCard(c))     # Reverse
+                self.deck.append(SkipCard(c))        # Single Skip
+                self.deck.append(ReverseSkipCard(c)) # Reverse Skip
         random.shuffle(self.deck)
 
         self.hands = {}
@@ -70,6 +76,7 @@ class Game:
         active_player = self.players[self.whose_turn]
         if len(self.hands[active_player]) == 0:
             # todo: actual point values and multi-round games
+            self.turn = 999999 # TODO: disable the last turn button in some more natural way
             game_db.games[self.uuid] = None # End the game (that is, remove it from the database)
             await self.channel.send(f"The game is over! **{active_player.display_name}** has won!")
         else:

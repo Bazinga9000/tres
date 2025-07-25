@@ -19,7 +19,7 @@ class Card(abc.ABC):
 
         # The display name of the card. Used to textually represent a card.
         # This defualt value should be overridden if the card has a special naming scheme (e.g is in only one color)
-        self.display_name = f"{self.color_name()} {self.card_type}"
+        self.display_name = f"{self.color_name()} {self.card_type}".replace("_"," ").title()
 
     # Gets the color name of this card, used to
     def color_name(self):
