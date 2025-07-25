@@ -222,7 +222,15 @@ class ActivePlayerView(TurnTrackingView):
         await g.end_turn()
 
     async def card_select_callback(self, interaction):
+        assert self.card_selector is not None
+        raw_value = self.card_selector.values[0]
         chosen = self.card_selector.values[0].split(",") # pyright: ignore (split is safe, all values will be strings)
         self.selected_card_index = int(chosen[0])
         self.selected_pile = int(chosen[1])
+
+        # Find the selected value, set it as default so view updates don't change it
+        for o in self.card_selector.options:
+            if o.value == raw_value:
+                o.default = True
+
         await self.update(interaction, False) # hand hasn't changed, no need to refresh the card selector's options
