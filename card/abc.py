@@ -8,12 +8,14 @@ class Card(abc.ABC):
         color: CardColor, # The card's color
         point_value: int, # How much the card is worth when unplayed at the end of the round
         number_value: int, # The card's value, if treated as a number in-game
-        card_type: str # The type of the card (by default, cards are playable on cards of the same type)
+        card_type: str, # The type of the card (by default, cards are playable on cards of the same type)
+        can_play_on_debt: bool # Can you play this card while you have card debt?
     ):
         self.color = color
         self.point_value = point_value
         self.number_value = number_value
         self.card_type = card_type
+        self.can_play_on_debt = can_play_on_debt
 
         # The display name of the card. Used to textually represent a card.
         # This defualt value should be overridden if the card has a special naming scheme (e.g is in only one color)
@@ -38,4 +40,11 @@ class Card(abc.ABC):
     # todo: annotating game with its type of Game causes a circular import dependency. figure out how to fix this
     def can_play(self, game, pile_index: int):
         top_card = game.piles[pile_index][-1]
+        if game.card_debt > 0 and not self.can_play_on_debt:
+            return False
         return bool(top_card.color & self.color) or self.card_type == top_card.card_type
+
+
+    # Called *after* the card is put onto the top of its corresponding pile.
+    def on_play(self, game, pile_index : int, card_args):
+        pass

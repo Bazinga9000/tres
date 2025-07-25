@@ -2,6 +2,7 @@ import discord
 import game_db
 import random
 from card.number_card import NumberCard
+from card.basic_draw_card import DrawCard
 from card.color import CardColor
 
 class Game:
@@ -25,6 +26,8 @@ class Game:
         for c in [CardColor.RED, CardColor.ORANGE, CardColor.YELLOW, CardColor.GREEN, CardColor.BLUE, CardColor.PURPLE]:
             for n in range(1,16):
                 self.deck.append(NumberCard(c,n))
+            for _ in range(2): # Draw 2s
+                self.deck.append(DrawCard(c, 2))
         random.shuffle(self.deck)
 
         self.hands = {}
@@ -32,6 +35,9 @@ class Game:
             self.hands[p] = [self.deck.pop() for _ in range(7)]
 
         self.piles = [[self.deck.pop()]]
+
+        # Card Debt = cards that must be drawn by the next player in lieu of taking a turn
+        self.card_debt = 0
 
     # Called at the start of a game
     async def on_start(self):
@@ -70,6 +76,14 @@ class Game:
             self.whose_turn = (self.whose_turn + 1) % len(self.players)
             self.turn += 1
             await self.start_turn()
+
+    # Draw n cards into a player's hand
+    def draw_card(self, player, n=1):
+        for _ in range(n):
+            c = self.deck.pop()
+            # todo: c.on_draw(player) here
+            self.hands[player].append(c)
+        # todo: sort hands here
 
 
 # A view that can keep track of the game's turns, and disable callbacks if they're out of turn
@@ -159,12 +173,20 @@ class ActivePlayerView(TurnTrackingView):
 
     # Update the items of this view
     def update_items(self, refresh_selector):
+        g = self.game
+
+        if g.card_debt > 0:
+            self.draw_button.label = f"Pay Card Debt ({g.card_debt})"
+            self.draw_button.callback = self.delete_out_of_turn(self.pay_card_debt_callback)
+            self.can_pass = False
+        else:
+            self.draw_button.label = "Draw Card"
+            self.draw_button.callback = self.delete_out_of_turn(self.draw_callback)
+
         self.pass_button.disabled = not self.can_pass
         self.play_button.disabled = not self.can_play()
 
-
         # Evaluate how many cards in the player's hand can be played, and where, and generate the requisite select options
-        g = self.game
         playable = []
         for cn,c in enumerate(g.hands[self.player]):
             for pn in range(len(g.piles)):
@@ -193,18 +215,24 @@ class ActivePlayerView(TurnTrackingView):
 
     async def draw_callback(self, interaction):
         g = self.game
-        g.hands[self.player].append(g.deck.pop())
+        g.draw_card(self.player, 1)
         await g.channel.send(f"{self.player.display_name} drew a card!")
         self.can_pass = True
         await self.update(interaction, True) # card was drawn, need to remake the card selector
 
+    async def pay_card_debt_callback(self, interaction):
+        g = self.game
+        g.draw_card(self.player, g.card_debt)
+        await g.channel.send(f"{self.player.display_name} pays the card debt ({g.card_debt})!")
+        g.card_debt = 0
+        await self.stop_view_and_end(interaction)
+
+
+
     async def pass_callback(self, interaction):
         g = self.game
         await g.channel.send(f"{self.player.display_name} passed their turn!")
-        await interaction.response.defer()
-        await interaction.delete_original_response()
-        self.stop()
-        await g.end_turn()
+        await self.stop_view_and_end(interaction)
 
 
     # Should the play button be enabled?
@@ -217,9 +245,8 @@ class ActivePlayerView(TurnTrackingView):
 
         chosen_card = g.hands[self.player].pop(self.selected_card_index)
         g.piles[self.selected_pile].append(chosen_card) # pyright: ignore (this is safe, selected_pile will be non-None at this point)
-        await interaction.response.defer()
-        await interaction.delete_original_response()
-        await g.end_turn()
+        chosen_card.on_play(g, self.selected_pile, {}) # todo: card args
+        await self.stop_view_and_end(interaction)
 
     async def card_select_callback(self, interaction):
         assert self.card_selector is not None
@@ -232,6 +259,12 @@ class ActivePlayerView(TurnTrackingView):
         for o in self.card_selector.options:
             o.default = o.value == raw_value
 
-
-
         await self.update(interaction, False) # hand hasn't changed, no need to refresh the card selector's options
+
+
+    # Utility function to delete the message and end the turn.
+    async def stop_view_and_end(self, interaction):
+        await interaction.response.defer()
+        await interaction.delete_original_response()
+        self.stop()
+        await self.game.end_turn()
