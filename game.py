@@ -230,7 +230,8 @@ class ActivePlayerView(TurnTrackingView):
 
         # Find the selected value, set it as default so view updates don't change it
         for o in self.card_selector.options:
-            if o.value == raw_value:
-                o.default = True
+            o.default = o.value == raw_value
+
+
 
         await self.update(interaction, False) # hand hasn't changed, no need to refresh the card selector's options
