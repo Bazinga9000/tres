@@ -384,7 +384,8 @@ class ActivePlayerView(TurnTrackingView):
             ca.CardArgType.PlayableCard: lambda v: self.game.hands[self.player][int(v)], # nth card in player's hand
             ca.CardArgType.AnyCard: lambda v: self.game.hands[self.player][int(v)],
             ca.CardArgType.AnotherPlayer: lambda v: self.game.find_player_id(int(v)), # uses player ID
-            ca.CardArgType.Player: lambda v: self.game.find_player_id(int(v))
+            ca.CardArgType.Player: lambda v: self.game.find_player_id(int(v)),
+            ca.CardArgType.Arbitrary: lambda v: v # do nothing to arbitrary type
         }[arg_type]
 
         async def callback(interaction):
