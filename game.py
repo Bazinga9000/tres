@@ -253,8 +253,8 @@ class ActivePlayerView(TurnTrackingView):
     async def pay_card_debt_callback(self, interaction):
         g = self.game
         g.draw_card(self.player, g.card_debt)
-        await g.channel.send(f"{self.player.display_name} pays the card debt ({g.card_debt})!")
         g.card_debt = 0
+        await g.channel.send(f"{self.player.display_name} pays the card debt ({g.card_debt})!")
         await self.stop_view_and_end(interaction)
 
 
