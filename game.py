@@ -1,12 +1,15 @@
 import discord
+from card.abc import Card
 from card.reverse_card import ReverseCard
 from card.reverse_skip import ReverseSkipCard
 from card.skip_card import SkipCard
+from card.wild_card import WildCard, WildDrawCard
 import game_db
 import random
 from card.number_card import NumberCard
 from card.basic_draw_card import DrawCard
 from card.color import CardColor
+import card.card_arg as ca
 
 class Game:
     def __init__(self, pregame):
@@ -35,6 +38,11 @@ class Game:
                 self.deck.append(ReverseCard(c))     # Reverse
                 self.deck.append(SkipCard(c))        # Single Skip
                 self.deck.append(ReverseSkipCard(c)) # Reverse Skip
+                self.deck.append(WildDrawCard(4))    # Wild Draw 4
+            for _ in range(5):
+                self.deck.append(WildCard())                # Wild Cards
+            self.deck.append(NumberCard(CardColor.RED, 40)) # Red 40
+
         random.shuffle(self.deck)
 
         self.hands = {}
@@ -76,7 +84,7 @@ class Game:
     async def end_turn(self):
         active_player = self.players[self.whose_turn]
         if len(self.hands[active_player]) == 0:
-            # todo: actual point values and multi-round games
+            # todo: actual point values
             self.round += 1
             self.turn = 1
             game_db.games[self.uuid] = None # End the game (that is, remove it from the database)
@@ -90,10 +98,16 @@ class Game:
     def draw_card(self, player, n=1):
         for _ in range(n):
             c = self.deck.pop()
-            # todo: c.on_draw(player) here
+            c.on_draw(self, player)
             self.hands[player].append(c)
         # todo: sort hands here
 
+    def find_player_id(self, player_id: int):
+        for p in self.players:
+            if p.id == player_id:
+                return p
+
+        return None
 
 # A view that can keep track of the game's turns, and disable callbacks if they're out of turn
 class TurnTrackingView(discord.ui.View):
@@ -176,6 +190,10 @@ class ActivePlayerView(TurnTrackingView):
         # Update the core items, enabling/disabling if neeeded
         self.update_items(True)
 
+        # A map of the card arg selectors currently in the item
+        self.card_arg_selectors = {}
+        self.card_arg_choices = {}
+
 
 
     # Update self and update the interaction
@@ -249,15 +267,21 @@ class ActivePlayerView(TurnTrackingView):
 
     # Should the play button be enabled?
     def can_play(self):
-        return self.selected_pile is not None and self.selected_card_index is not None
-        # TODO: if a card requires arguments, e.g player target, wild color, check if they're set properly
+        if self.selected_pile is None or self.selected_card_index is None: # If you haven't selected a card...
+            return False # You definitely can't play.
+
+        for v in self.card_arg_choices.values(): # If the selected card has any arguments...
+            if v is None: # If the argument is unset...
+                return False # you can't play the card yet
+
+        return True
 
     async def play_callback(self, interaction):
         g = self.game
 
         chosen_card = g.hands[self.player].pop(self.selected_card_index)
         g.piles[self.selected_pile].append(chosen_card) # pyright: ignore (this is safe, selected_pile will be non-None at this point)
-        chosen_card.on_play(g, self.selected_pile, {}) # todo: card args
+        chosen_card.on_play(g, self.selected_pile, self.card_arg_choices)
         await self.stop_view_and_end(interaction)
 
     async def card_select_callback(self, interaction):
@@ -271,6 +295,16 @@ class ActivePlayerView(TurnTrackingView):
         for o in self.card_selector.options:
             o.default = o.value == raw_value
 
+        # Delete all existing card arg selectors and clear the choices dictionary
+        for v in self.card_arg_selectors.values():
+            self.remove_item(v)
+        self.card_arg_choices = {}
+
+        self.card_arg_selectors = self.make_card_arg_selectors(self.game.hands[self.player][self.selected_card_index])
+        for (k,v) in self.card_arg_selectors.items():
+            self.add_item(v)
+            self.card_arg_choices[k] = None
+
         await self.update(interaction, False) # hand hasn't changed, no need to refresh the card selector's options
 
 
@@ -280,3 +314,86 @@ class ActivePlayerView(TurnTrackingView):
         await interaction.delete_original_response()
         self.stop()
         await self.game.end_turn()
+
+    def make_card_arg_selectors(self, card : Card):
+        def make_selector(name: str, arg: ca.CardArg):
+            type = arg.arg_type
+            s = discord.ui.Select(
+                select_type = discord.ComponentType.string_select,
+                placeholder = arg.label,
+                min_values = arg.min,
+                max_values = arg.max
+            )
+            # Set the callback
+            s.callback = self.make_arg_selector_callback(name, s, type)
+
+            # Generate the options
+            match type:
+                case ca.CardArgType.Color:
+                    for o in [
+                        ("Red", CardColor.RED),
+                        ("Orange", CardColor.ORANGE),
+                        ("Yellow", CardColor.YELLOW),
+                        ("Green", CardColor.GREEN),
+                        ("Blue", CardColor.BLUE),
+                        ("Purple", CardColor.PURPLE)
+                    ]:
+                        s.add_option(
+                            label = o[0],
+                            value = str(o[1].value)
+                        )
+
+                case ca.CardArgType.Player | ca.CardArgType.AnotherPlayer:
+                    for p in self.game.players:
+                        if p != self.player or type == ca.CardArgType.AnotherPlayer:
+                            s.add_option(
+                                label = p.display_name,
+                                value = str(p.id)
+                            )
+
+                case ca.CardArgType.PlayableCard | ca.CardArgType.AnyCard:
+                    for (k,c) in enumerate(self.game.hands[self.player]):
+                        if c != card: # A card can never select itself
+                            if type == ca.CardArgType.AnyCard or c.can_play(self.game, self.selected_pile):
+                               s.add_option(
+                                   label = c.display_name,
+                                   value = str(k)
+                               )
+
+                case ca.CardArgType.Arbitrary:
+                    for o in card.get_custom_arg_choices(name):
+                        s.add_option(
+                            label = o[0],
+                            value = o[1]
+                        )
+
+                case _:
+                    raise NotImplementedError(f"Card Arg Type {type} Not Yet Implemented")
+
+            return s
+
+        out = {}
+        for (k,v) in card.get_args().items():
+            out[k] = make_selector(k, v)
+        return out
+
+    def make_arg_selector_callback(self, choice_id: str, selector: discord.ui.Select, arg_type: ca.CardArgType):
+        # Get the "parser function" that converts the selectors String/User value into the actual value choice
+        parser = {
+            ca.CardArgType.Color: lambda v: CardColor(int(v)), # Shove the integer into the color enum directly
+            ca.CardArgType.PlayableCard: lambda v: self.game.hands[self.player][int(v)], # nth card in player's hand
+            ca.CardArgType.AnyCard: lambda v: self.game.hands[self.player][int(v)],
+            ca.CardArgType.AnotherPlayer: lambda v: self.game.find_player_id(int(v)), # uses player ID
+            ca.CardArgType.Player: lambda v: self.game.find_player_id(int(v))
+        }[arg_type]
+
+        async def callback(interaction):
+            # Set the arg choices
+            self.card_arg_choices[choice_id] = [parser(v) for v in selector.values]
+            # Set the defaults
+            for o in selector.options:
+                o.default = o.value in selector.values
+            # update the view
+            await self.update(interaction, False)
+
+        return self.delete_out_of_turn(callback)

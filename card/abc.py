@@ -48,3 +48,18 @@ class Card(abc.ABC):
     # Called *after* the card is put onto the top of its corresponding pile.
     def on_play(self, game, pile_index : int, card_args):
         pass
+
+    # Called *after* the card is put into the hand
+    def on_draw(self, game, player):
+        pass
+
+    # Return a dictionary mapping internal names to CardArgs.
+    # on_play (above) will be passed a dictionary mapping these names to the list of given arguments
+    # See wild_card for an example
+    def get_args(self):
+        return {}
+
+    # If your card uses the Arbitrary card arg type, this function will be called to determine the set of possible options.
+    # this should return a list of tuples (string to display in the selector, string to be passed to on_play)
+    def get_custom_arg_choices(self, arg_id: str):
+        return []
