@@ -1,16 +1,17 @@
 import abc
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Mapping
 
 import discord
 
-from card.card_arg import CardArg
 from card.color import CardColor
 
 # TODO: this solves circular dependency, but it's probably better to just refactor so that the type doesn't exist in the first place -cap
 if TYPE_CHECKING:
     from game import Game
+    from card.args import CardArg # i made it worse instead --baz
 else:
     Game = Any
+    CardArg = Any
 
 class Card(abc.ABC):
     def __init__(self,
@@ -54,7 +55,7 @@ class Card(abc.ABC):
 
 
     # Called *after* the card is put onto the top of its corresponding pile.
-    def on_play(self, game: Game, pile_index: int, card_args: dict[str, list[Any]]):
+    def on_play(self, game: Game, pile_index: int, card_args: Mapping[str, CardArg]):
         pass
 
     # Called *after* the card is put into the hand
@@ -64,10 +65,5 @@ class Card(abc.ABC):
     # Return a dictionary mapping internal names to CardArgs.
     # on_play (above) will be passed a dictionary mapping these names to the list of given arguments
     # See wild_card for an example
-    def get_args(self) -> dict[str, CardArg]:
+    def get_args(self) -> Mapping[str, CardArg]:
         return {}
-
-    # If your card uses the Arbitrary card arg type, this function will be called to determine the set of possible options.
-    # this should return a list of tuples (string to display in the selector, string to be passed to on_play)
-    def get_custom_arg_choices(self, arg_id: str) -> list[tuple[str, str]]:
-        return []

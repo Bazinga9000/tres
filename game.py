@@ -11,9 +11,8 @@ import random
 from card.number_card import NumberCard
 from card.basic_draw_card import DrawCard
 from card.color import CardColor
-import card.card_arg as ca
 from pregame import PreGame
-
+from card.args import CardArg
 
 # TODO: added this for typing mid-file. delete this after we overhaul stuff -cap
 type Value = str | discord.Member | discord.User | discord.Role | discord.abc.GuildChannel | discord.Thread
@@ -201,7 +200,7 @@ class ActivePlayerView(TurnTrackingView):
 
         # A map of the card arg selectors currently in the item
         self.card_arg_selectors = {}
-        self.card_arg_choices: dict[str, list[Any] | None] = {}
+        self.requested_args: dict[str, CardArg] = {}
 
 
 
@@ -279,21 +278,20 @@ class ActivePlayerView(TurnTrackingView):
         if self.selected_pile is None or self.selected_card_index is None: # If you haven't selected a card...
             return False # You definitely can't play.
 
-        for v in self.card_arg_choices.values(): # If the selected card has any arguments...
-            if v is None: # If the argument is unset...
+        for v in self.requested_args.values(): # If the selected card has any arguments...
+            if not v.is_populated(): # If the argument is unset...
                 return False # you can't play the card yet
 
         return True
 
     async def play_callback(self, interaction: discord.Interaction):
         g = self.game
-        
+
         assert self.selected_card_index is not None and self.selected_pile is not None, "Selected card and pile must be set before playing a card"
         chosen_card = g.hands[self.player].pop(self.selected_card_index)
         g.piles[self.selected_pile].append(chosen_card)
-        
-        card_args = {k: v for k, v in self.card_arg_choices.items() if v is not None}
-        chosen_card.on_play(g, self.selected_pile, card_args)
+
+        chosen_card.on_play(g, self.selected_pile, self.requested_args)
         await self.stop_view_and_end(interaction)
 
     async def card_select_callback(self, interaction: discord.Interaction):
@@ -311,12 +309,12 @@ class ActivePlayerView(TurnTrackingView):
         # Delete all existing card arg selectors and clear the choices dictionary
         for v in self.card_arg_selectors.values():
             self.remove_item(v)
-        self.card_arg_choices = {}
+        self.requested_args = {}
 
+        # This also sets requested_args
         self.card_arg_selectors = self.make_card_arg_selectors(self.game.hands[self.player][self.selected_card_index])
-        for (k,v) in self.card_arg_selectors.items():
-            self.add_item(v)
-            self.card_arg_choices[k] = None
+        for s in self.card_arg_selectors.values():
+            self.add_item(s)
 
         await self.update(interaction, False) # hand hasn't changed, no need to refresh the card selector's options
 
@@ -329,59 +327,22 @@ class ActivePlayerView(TurnTrackingView):
         await self.game.end_turn()
 
     def make_card_arg_selectors(self, card: Card):
-        def make_selector(name: str, arg: ca.CardArg):
-            type = arg.arg_type
+        def make_selector(name: str, arg: CardArg):
+            self.requested_args[name] = arg
+
             s: discord.ui.Select[Self] = discord.ui.Select(
                 select_type = discord.ComponentType.string_select,
                 placeholder = arg.label,
-                min_values = arg.min,
-                max_values = arg.max
+                min_values = arg.min_choices,
+                max_values = arg.max_choices
             )
             # Set the callback
-            s.callback = self.make_arg_selector_callback(name, s, type)
+            s.callback = self.make_arg_selector_callback(name, s, arg)
 
             # Generate the options
-            match type:
-                case ca.CardArgType.Color:
-                    for o in [
-                        ("Red", CardColor.RED),
-                        ("Orange", CardColor.ORANGE),
-                        ("Yellow", CardColor.YELLOW),
-                        ("Green", CardColor.GREEN),
-                        ("Blue", CardColor.BLUE),
-                        ("Purple", CardColor.PURPLE)
-                    ]:
-                        s.add_option(
-                            label = o[0],
-                            value = str(o[1].value)
-                        )
-
-                case ca.CardArgType.Player | ca.CardArgType.AnotherPlayer:
-                    for p in self.game.players:
-                        if p != self.player or type == ca.CardArgType.Player:
-                            s.add_option(
-                                label = p.display_name,
-                                value = str(p.id)
-                            )
-
-                case ca.CardArgType.PlayableCard | ca.CardArgType.AnyCard:
-                    for (k,c) in enumerate(self.game.hands[self.player]):
-                        if c != card: # A card can never select itself
-                            if type == ca.CardArgType.AnyCard or self.selected_pile is not None and c.can_play(self.game, self.selected_pile):
-                               s.add_option(
-                                   label = c.display_name,
-                                   value = str(k)
-                               )
-
-                case ca.CardArgType.Arbitrary:
-                    for o in card.get_custom_arg_choices(name):
-                        s.add_option(
-                            label = o[0],
-                            value = o[1]
-                        )
-
-                case _:
-                    raise NotImplementedError(f"Card Arg Type {type} Not Yet Implemented")
+            assert self.selected_pile is not None
+            for o in arg.generate(self.game, self.player, self.selected_pile):
+                s.add_option(label=o[0], value=o[1])
 
             return s
 
@@ -390,29 +351,13 @@ class ActivePlayerView(TurnTrackingView):
             out[k] = make_selector(k, v)
         return out
 
-    def make_arg_selector_callback(self, choice_id: str, selector: discord.ui.Select[Self], arg_type: ca.CardArgType):
-        # Get the "parser function" that converts the selectors String/User value into the actual value choice
-        
-        # TODO: i pulled all these lambdas into local functions so they could be typed but we need to overhaul this anyway -cap
-        def ca_color(v: Value): return CardColor(int(str(v)))  # Shove the integer into the color enum directly
-        def ca_playable_card(v: Value): return self.game.hands[self.player][int(str(v))]  # nth card in player's hand
-        def ca_any_card(v: Value): return self.game.hands[self.player][int(str(v))]
-        def ca_another_player(v: Value): return self.game.find_player_id(int(str(v)))  # uses player ID
-        def ca_player(v: Value): return self.game.find_player_id(int(str(v)))
-        def ca_arbitrary(v: Value): return v  # do nothing to arbitrary type
-        
-        parser: Callable[[Value], Any] = {
-            ca.CardArgType.Color: ca_color,
-            ca.CardArgType.PlayableCard: ca_playable_card,
-            ca.CardArgType.AnyCard: ca_any_card,
-            ca.CardArgType.AnotherPlayer: ca_another_player,
-            ca.CardArgType.Player: ca_player,
-            ca.CardArgType.Arbitrary: ca_arbitrary
-        }[arg_type]
-
+    def make_arg_selector_callback(self, choice_id: str, selector: discord.ui.Select[Self], arg: CardArg):
         async def callback(interaction: discord.Interaction):
             # Set the arg choices
-            self.card_arg_choices[choice_id] = [parser(v) for v in selector.values]
+            assert self.selected_pile is not None
+            # todo: appease the type checker
+            vals : list[str] = selector.values # type: ignore
+            self.requested_args[choice_id].populate(self.game, self.player, self.selected_pile, vals)
             # Set the defaults
             for o in selector.options:
                 o.default = o.value in selector.values
