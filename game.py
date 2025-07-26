@@ -246,8 +246,8 @@ class ActivePlayerView(TurnTrackingView):
     async def draw_callback(self, interaction):
         g = self.game
         g.draw_card(self.player, 1)
-        await g.channel.send(f"{self.player.display_name} drew a card!")
         self.can_pass = True
+        await g.channel.send(f"{self.player.display_name} drew a card!")
         await self.update(interaction, True) # card was drawn, need to remake the card selector
 
     async def pay_card_debt_callback(self, interaction):
