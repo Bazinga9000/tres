@@ -345,7 +345,7 @@ class ActivePlayerView(TurnTrackingView):
 
                 case ca.CardArgType.Player | ca.CardArgType.AnotherPlayer:
                     for p in self.game.players:
-                        if p != self.player or type == ca.CardArgType.AnotherPlayer:
+                        if p != self.player or type == ca.CardArgType.Player:
                             s.add_option(
                                 label = p.display_name,
                                 value = str(p.id)
