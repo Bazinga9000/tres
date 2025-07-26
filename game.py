@@ -19,6 +19,7 @@ class Game:
         self.name = pregame.name
 
         # Set up game
+        self.round = 1
         self.turn = 1
 
         random.shuffle(self.players)
@@ -76,7 +77,8 @@ class Game:
         active_player = self.players[self.whose_turn]
         if len(self.hands[active_player]) == 0:
             # todo: actual point values and multi-round games
-            self.turn = 999999 # TODO: disable the last turn button in some more natural way
+            self.round += 1
+            self.turn = 1
             game_db.games[self.uuid] = None # End the game (that is, remove it from the database)
             await self.channel.send(f"The game is over! **{active_player.display_name}** has won!")
         else:
@@ -99,15 +101,18 @@ class TurnTrackingView(discord.ui.View):
         super().__init__()
         self.game = game
         self.turn = game.turn
+        self.round = game.round
         self.player = game.players[game.whose_turn]
 
     # Wrap a callback to validate the turn
     # The actual callbacks are thus assumed to be correct
+    def is_bad(self):
+        return (self.game.round, self.game.turn) != (self.round, self.turn)
 
     # Delete the entire message if the interaction is done out of turn
     def delete_out_of_turn(self, cb):
         async def wrapper(interaction):
-            if self.game.turn > self.turn:
+            if self.is_bad():
                 # This view is no longer required. Kill the message!
                 await interaction.response.defer()
                 await interaction.delete_original_response()
@@ -119,7 +124,7 @@ class TurnTrackingView(discord.ui.View):
     # Empty the view if the interaction is done out of turn, but do not delete the message
     def empty_out_of_turn(self, cb):
         async def wrapper(interaction):
-            if self.game.turn > self.turn:
+            if self.is_bad():
                 # This view is no longer required. Remove it from the message!
                 await interaction.edit(view=None)
                 self.stop()
