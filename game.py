@@ -214,7 +214,7 @@ class ActivePlayerView(TurnTrackingView):
             self.draw_button.callback = self.delete_out_of_turn(self.draw_callback)
 
         self.pass_button.disabled = not self.can_pass
-        self.play_button.disabled = not self.can_play()
+        self.play_button.disabled = not self.can_press_play()
 
         # Evaluate how many cards in the player's hand can be played, and where, and generate the requisite select options
         playable = []
@@ -266,7 +266,7 @@ class ActivePlayerView(TurnTrackingView):
 
 
     # Should the play button be enabled?
-    def can_play(self):
+    def can_press_play(self):
         if self.selected_pile is None or self.selected_card_index is None: # If you haven't selected a card...
             return False # You definitely can't play.
 
