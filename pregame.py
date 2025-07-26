@@ -1,10 +1,11 @@
+from typing import Self
 import discord
 import uuid
 import game_db
 import game
 
 class PreGame(discord.ui.View):
-    def __init__(self, host, channel, name):
+    def __init__(self, host: discord.User | discord.Member, channel: discord.TextChannel, name: str | None):
         super().__init__()
 
         # Generate a UUID for this game and add it to the global DB
@@ -42,7 +43,7 @@ class PreGame(discord.ui.View):
 
     # Interactions
     @discord.ui.button(label="Start Game", row=0, style=discord.ButtonStyle.blurple)
-    async def start_callback(self, button, interaction):
+    async def start_callback(self, button: discord.ui.Button[Self], interaction: discord.Interaction):
         if interaction.user != self.host:
             return await interaction.respond("Only the host can start the game!", ephemeral=True)
 
@@ -55,21 +56,21 @@ class PreGame(discord.ui.View):
         await interaction.edit(embed=self.info_embed(), view=self)
         await started_game.on_start()
 
-    async def update_info(self, interaction):
+    async def update_info(self, interaction: discord.Interaction):
         await interaction.edit(embed=self.info_embed(), view=self)
 
     @discord.ui.button(label="Join Game", row=1, style=discord.ButtonStyle.success)
-    async def join_callback(self, button, interaction):
+    async def join_callback(self, button: discord.ui.Button[Self], interaction: discord.Interaction):
         if interaction.user in self.players:
             await interaction.respond("You are already in the game!", ephemeral=True)
-        else:
+        elif interaction.user:
             self.players.append(interaction.user)
             await self.update_info(interaction)
 
     @discord.ui.button(label="Leave Game", row=1, style=discord.ButtonStyle.danger)
-    async def leave_callback(self, button, interaction):
+    async def leave_callback(self, button: discord.ui.Button[Self], interaction: discord.Interaction):
         if interaction.user not in self.players:
             await interaction.respond("You are not in the game!", ephemeral=True)
-        else:
+        elif interaction.user:
             self.players.remove(interaction.user)
             await self.update_info(interaction)

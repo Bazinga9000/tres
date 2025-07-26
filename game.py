@@ -1,3 +1,5 @@
+from collections.abc import Callable
+from typing import Any, Coroutine, Self
 import discord
 from card.abc import Card
 from card.reverse_card import ReverseCard
@@ -10,9 +12,15 @@ from card.number_card import NumberCard
 from card.basic_draw_card import DrawCard
 from card.color import CardColor
 import card.card_arg as ca
+from pregame import PreGame
+
+
+# TODO: added this for typing mid-file. delete this after we overhaul stuff -cap
+type Value = str | discord.Member | discord.User | discord.Role | discord.abc.GuildChannel | discord.Thread
+
 
 class Game:
-    def __init__(self, pregame):
+    def __init__(self, pregame: PreGame):
         # Overwrite the pregame with the real game
         self.uuid = pregame.uuid
         game_db.games[self.uuid] = self
@@ -29,7 +37,7 @@ class Game:
         self.whose_turn = 0
 
         # todo more robust deck implementation (for e.g procedural deck)
-        self.deck = []
+        self.deck: list[Card] = []
         for c in [CardColor.RED, CardColor.ORANGE, CardColor.YELLOW, CardColor.GREEN, CardColor.BLUE, CardColor.PURPLE]:
             for n in range(1,16):
                 self.deck.append(NumberCard(c,n))
@@ -45,7 +53,7 @@ class Game:
 
         random.shuffle(self.deck)
 
-        self.hands = {}
+        self.hands: dict[discord.User | discord.Member, list[Card]] = {}
         for p in self.players:
             self.hands[p] = [self.deck.pop() for _ in range(7)]
 
@@ -95,7 +103,7 @@ class Game:
             await self.start_turn()
 
     # Draw n cards into a player's hand
-    def draw_card(self, player, n=1):
+    def draw_card(self, player: discord.User | discord.Member, n: int = 1):
         for _ in range(n):
             c = self.deck.pop()
             c.on_draw(self, player)
@@ -124,8 +132,8 @@ class TurnTrackingView(discord.ui.View):
         return (self.game.round, self.game.turn) != (self.round, self.turn)
 
     # Delete the entire message if the interaction is done out of turn
-    def delete_out_of_turn(self, cb):
-        async def wrapper(interaction):
+    def delete_out_of_turn(self, cb: Callable[[discord.Interaction], Coroutine[None, None, None]]):
+        async def wrapper(interaction: discord.Interaction):
             if self.is_bad():
                 # This view is no longer required. Kill the message!
                 await interaction.response.defer()
@@ -136,8 +144,8 @@ class TurnTrackingView(discord.ui.View):
         return wrapper
 
     # Empty the view if the interaction is done out of turn, but do not delete the message
-    def empty_out_of_turn(self, cb):
-        async def wrapper(interaction):
+    def empty_out_of_turn(self, cb: Callable[[discord.Interaction], Coroutine[None, None, None]]):
+        async def wrapper(interaction: discord.Interaction):
             if self.is_bad():
                 # This view is no longer required. Remove it from the message!
                 await interaction.edit(view=None)
@@ -149,14 +157,15 @@ class TurnTrackingView(discord.ui.View):
 class TurnStarterView(TurnTrackingView):
     def __init__(self, game: Game):
         super().__init__(game)
-        turn_button = discord.ui.Button(label=f"Take Turn ({self.player.display_name})", row=1, style=discord.ButtonStyle.blurple)
+        turn_button: discord.ui.Button[TurnTrackingView] = discord.ui.Button(label=f"Take Turn ({self.player.display_name})", row=1, style=discord.ButtonStyle.blurple)
         turn_button.callback = self.empty_out_of_turn(self.turn_callback)
         self.add_item(turn_button)
 
 
-    async def turn_callback(self, interaction):
+    async def turn_callback(self, interaction: discord.Interaction):
         if interaction.user != self.player:
-            return await interaction.respond("It's not your turn!", ephemeral=True)
+            await interaction.respond("It's not your turn!", ephemeral=True)
+            return
 
         await interaction.respond(view=ActivePlayerView(self.game), ephemeral=True)
 
@@ -174,35 +183,35 @@ class ActivePlayerView(TurnTrackingView):
 
         # Set up the core buttons
         # Draw a card
-        self.draw_button = discord.ui.Button(label = "Draw a card", style = discord.ButtonStyle.danger)
+        self.draw_button: discord.ui.Button[ActivePlayerView] = discord.ui.Button(label = "Draw a card", style = discord.ButtonStyle.danger)
         self.draw_button.callback = self.delete_out_of_turn(self.draw_callback)
         self.add_item(self.draw_button)
         # Pass your turn
-        self.pass_button = discord.ui.Button(label = "Pass turn", style = discord.ButtonStyle.blurple)
+        self.pass_button: discord.ui.Button[ActivePlayerView] = discord.ui.Button(label = "Pass turn", style = discord.ButtonStyle.blurple)
         self.pass_button.callback = self.delete_out_of_turn(self.pass_callback)
         self.add_item(self.pass_button)
         # Play a card
-        self.play_button = discord.ui.Button(label = "Play selected card", style = discord.ButtonStyle.success)
+        self.play_button: discord.ui.Button[ActivePlayerView] = discord.ui.Button(label = "Play selected card", style = discord.ButtonStyle.success)
         self.play_button.callback = self.delete_out_of_turn(self.play_callback)
         self.add_item(self.play_button)
         # Card selector (added in update_items if needed)
-        self.card_selector = None
+        self.card_selector: discord.ui.Select[ActivePlayerView] | None = None
         # Update the core items, enabling/disabling if neeeded
         self.update_items(True)
 
         # A map of the card arg selectors currently in the item
         self.card_arg_selectors = {}
-        self.card_arg_choices = {}
+        self.card_arg_choices: dict[str, list[Any] | None] = {}
 
 
 
     # Update self and update the interaction
-    async def update(self, interaction, refresh_selector):
+    async def update(self, interaction: discord.Interaction, refresh_selector: bool):
         self.update_items(refresh_selector)
         await interaction.edit(view=self)
 
     # Update the items of this view
-    def update_items(self, refresh_selector):
+    def update_items(self, refresh_selector: bool):
         g = self.game
 
         if g.card_debt > 0:
@@ -217,7 +226,7 @@ class ActivePlayerView(TurnTrackingView):
         self.play_button.disabled = not self.can_press_play()
 
         # Evaluate how many cards in the player's hand can be played, and where, and generate the requisite select options
-        playable = []
+        playable: list[discord.SelectOption] = []
         for cn,c in enumerate(g.hands[self.player]):
             for pn in range(len(g.piles)):
                 if c.can_play(g, pn):
@@ -243,14 +252,14 @@ class ActivePlayerView(TurnTrackingView):
         if refresh_selector:
             self.card_selector.options = playable
 
-    async def draw_callback(self, interaction):
+    async def draw_callback(self, interaction: discord.Interaction):
         g = self.game
         g.draw_card(self.player, 1)
         self.can_pass = True
         await g.channel.send(f"{self.player.display_name} drew a card!")
         await self.update(interaction, True) # card was drawn, need to remake the card selector
 
-    async def pay_card_debt_callback(self, interaction):
+    async def pay_card_debt_callback(self, interaction: discord.Interaction):
         g = self.game
         g.draw_card(self.player, g.card_debt)
         g.card_debt = 0
@@ -259,7 +268,7 @@ class ActivePlayerView(TurnTrackingView):
 
 
 
-    async def pass_callback(self, interaction):
+    async def pass_callback(self, interaction: discord.Interaction):
         g = self.game
         await g.channel.send(f"{self.player.display_name} passed their turn!")
         await self.stop_view_and_end(interaction)
@@ -276,18 +285,22 @@ class ActivePlayerView(TurnTrackingView):
 
         return True
 
-    async def play_callback(self, interaction):
+    async def play_callback(self, interaction: discord.Interaction):
         g = self.game
-
+        
+        assert self.selected_card_index is not None and self.selected_pile is not None, "Selected card and pile must be set before playing a card"
         chosen_card = g.hands[self.player].pop(self.selected_card_index)
-        g.piles[self.selected_pile].append(chosen_card) # pyright: ignore (this is safe, selected_pile will be non-None at this point)
-        chosen_card.on_play(g, self.selected_pile, self.card_arg_choices)
+        g.piles[self.selected_pile].append(chosen_card)
+        
+        card_args = {k: v for k, v in self.card_arg_choices.items() if v is not None}
+        chosen_card.on_play(g, self.selected_pile, card_args)
         await self.stop_view_and_end(interaction)
 
-    async def card_select_callback(self, interaction):
+    async def card_select_callback(self, interaction: discord.Interaction):
         assert self.card_selector is not None
         raw_value = self.card_selector.values[0]
-        chosen = self.card_selector.values[0].split(",") # pyright: ignore (split is safe, all values will be strings)
+        assert isinstance(raw_value, str), "Card selector values must be strings"
+        chosen = raw_value.split(",")
         self.selected_card_index = int(chosen[0])
         self.selected_pile = int(chosen[1])
 
@@ -309,16 +322,16 @@ class ActivePlayerView(TurnTrackingView):
 
 
     # Utility function to delete the message and end the turn.
-    async def stop_view_and_end(self, interaction):
+    async def stop_view_and_end(self, interaction: discord.Interaction):
         await interaction.response.defer()
         await interaction.delete_original_response()
         self.stop()
         await self.game.end_turn()
 
-    def make_card_arg_selectors(self, card : Card):
+    def make_card_arg_selectors(self, card: Card):
         def make_selector(name: str, arg: ca.CardArg):
             type = arg.arg_type
-            s = discord.ui.Select(
+            s: discord.ui.Select[Self] = discord.ui.Select(
                 select_type = discord.ComponentType.string_select,
                 placeholder = arg.label,
                 min_values = arg.min,
@@ -354,7 +367,7 @@ class ActivePlayerView(TurnTrackingView):
                 case ca.CardArgType.PlayableCard | ca.CardArgType.AnyCard:
                     for (k,c) in enumerate(self.game.hands[self.player]):
                         if c != card: # A card can never select itself
-                            if type == ca.CardArgType.AnyCard or c.can_play(self.game, self.selected_pile):
+                            if type == ca.CardArgType.AnyCard or self.selected_pile is not None and c.can_play(self.game, self.selected_pile):
                                s.add_option(
                                    label = c.display_name,
                                    value = str(k)
@@ -372,23 +385,32 @@ class ActivePlayerView(TurnTrackingView):
 
             return s
 
-        out = {}
+        out: dict[str, discord.ui.Select[ActivePlayerView]] = {}
         for (k,v) in card.get_args().items():
             out[k] = make_selector(k, v)
         return out
 
-    def make_arg_selector_callback(self, choice_id: str, selector: discord.ui.Select, arg_type: ca.CardArgType):
+    def make_arg_selector_callback(self, choice_id: str, selector: discord.ui.Select[Self], arg_type: ca.CardArgType):
         # Get the "parser function" that converts the selectors String/User value into the actual value choice
-        parser = {
-            ca.CardArgType.Color: lambda v: CardColor(int(v)), # Shove the integer into the color enum directly
-            ca.CardArgType.PlayableCard: lambda v: self.game.hands[self.player][int(v)], # nth card in player's hand
-            ca.CardArgType.AnyCard: lambda v: self.game.hands[self.player][int(v)],
-            ca.CardArgType.AnotherPlayer: lambda v: self.game.find_player_id(int(v)), # uses player ID
-            ca.CardArgType.Player: lambda v: self.game.find_player_id(int(v)),
-            ca.CardArgType.Arbitrary: lambda v: v # do nothing to arbitrary type
+        
+        # TODO: i pulled all these lambdas into local functions so they could be typed but we need to overhaul this anyway -cap
+        def ca_color(v: Value): return CardColor(int(str(v)))  # Shove the integer into the color enum directly
+        def ca_playable_card(v: Value): return self.game.hands[self.player][int(str(v))]  # nth card in player's hand
+        def ca_any_card(v: Value): return self.game.hands[self.player][int(str(v))]
+        def ca_another_player(v: Value): return self.game.find_player_id(int(str(v)))  # uses player ID
+        def ca_player(v: Value): return self.game.find_player_id(int(str(v)))
+        def ca_arbitrary(v: Value): return v  # do nothing to arbitrary type
+        
+        parser: Callable[[Value], Any] = {
+            ca.CardArgType.Color: ca_color,
+            ca.CardArgType.PlayableCard: ca_playable_card,
+            ca.CardArgType.AnyCard: ca_any_card,
+            ca.CardArgType.AnotherPlayer: ca_another_player,
+            ca.CardArgType.Player: ca_player,
+            ca.CardArgType.Arbitrary: ca_arbitrary
         }[arg_type]
 
-        async def callback(interaction):
+        async def callback(interaction: discord.Interaction):
             # Set the arg choices
             self.card_arg_choices[choice_id] = [parser(v) for v in selector.values]
             # Set the defaults

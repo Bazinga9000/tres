@@ -13,7 +13,10 @@ async def on_ready():
     print(f"{bot.user} is ready and online!")
 
 @bot.slash_command(name="tres", description="Create a game of Tres")
-async def tres(ctx: discord.ApplicationContext, name: discord.Option(str, required=False)):
+async def tres(ctx: discord.ApplicationContext, name: str | None):
+    if not isinstance(ctx.channel, discord.TextChannel):
+        await ctx.respond("This command can only be used in text channels.", ephemeral=True)
+        return # TODO: this probably invalidates some types of channels that we could reasonably play games in. might need to broaden this
     g = pregame.PreGame(ctx.user, ctx.channel, name)
     await ctx.respond("", embed=g.info_embed(), view=g) # Send a message with our View class that contains the button
 
