@@ -1,7 +1,16 @@
 import abc
+from typing import TYPE_CHECKING, Any
 
 import discord
+
+from card.card_arg import CardArg
 from card.color import CardColor
+
+# TODO: this solves circular dependency, but it's probably better to just refactor so that the type doesn't exist in the first place -cap
+if TYPE_CHECKING:
+    from game import Game
+else:
+    Game = Any
 
 class Card(abc.ABC):
     def __init__(self,
@@ -37,8 +46,7 @@ class Card(abc.ABC):
 
     # Checks whether this card can be played on a given pile
     # Defaults to standard UNO rules (at least one matching color OR matching card type)
-    # todo: annotating game with its type of Game causes a circular import dependency. figure out how to fix this
-    def can_play(self, game, pile_index: int):
+    def can_play(self, game: Game, pile_index: int):
         top_card = game.piles[pile_index][-1]
         if game.card_debt > 0 and not self.can_play_on_debt:
             return False
@@ -46,20 +54,20 @@ class Card(abc.ABC):
 
 
     # Called *after* the card is put onto the top of its corresponding pile.
-    def on_play(self, game, pile_index : int, card_args):
+    def on_play(self, game: Game, pile_index: int, card_args: dict[str, list[Any]]):
         pass
 
     # Called *after* the card is put into the hand
-    def on_draw(self, game, player):
+    def on_draw(self, game: Game, player: discord.User | discord.Member):
         pass
 
     # Return a dictionary mapping internal names to CardArgs.
     # on_play (above) will be passed a dictionary mapping these names to the list of given arguments
     # See wild_card for an example
-    def get_args(self):
+    def get_args(self) -> dict[str, CardArg]:
         return {}
 
     # If your card uses the Arbitrary card arg type, this function will be called to determine the set of possible options.
     # this should return a list of tuples (string to display in the selector, string to be passed to on_play)
-    def get_custom_arg_choices(self, arg_id: str):
+    def get_custom_arg_choices(self, arg_id: str) -> list[tuple[str, str]]:
         return []

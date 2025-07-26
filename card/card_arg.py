@@ -15,7 +15,7 @@ class CardArgType(Enum):
 # Something a card is able to ask for before it is played
 # Each of these corresponds to a select option in the view
 class CardArg():
-    def __init__(self, type: CardArgType, label: str, min=1, max=1):
+    def __init__(self, type: CardArgType, label: str, min: int = 1, max:int = 1):
         assert max >= min
         assert min > 0
         self.arg_type = type # What is the card asking for?

@@ -1,0 +1,19 @@
+import asyncio
+from .abc import Messageable
+from types import TracebackType
+from typing import TypeVar
+
+__all__ = ['Typing']
+
+TypingT = TypeVar('TypingT', bound='Typing')
+
+class Typing:
+    loop: asyncio.AbstractEventLoop
+    messageable: Messageable
+    def __init__(self, messageable: Messageable) -> None: ...
+    async def do_typing(self) -> None: ...
+    task: asyncio.Task
+    def __enter__(self) -> TypingT: ...
+    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> None: ...
+    async def __aenter__(self) -> TypingT: ...
+    async def __aexit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> None: ...
