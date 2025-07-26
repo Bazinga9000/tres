@@ -8,7 +8,7 @@ from ..role import Role
 from ..user import User
 from _typeshed import Incomplete
 from enum import Enum
-from typing import Literal
+from typing import Callable, Literal
 
 __all__ = ['ThreadOption', 'Option', 'OptionChoice', 'option']
 
@@ -43,4 +43,4 @@ class OptionChoice:
     def __init__(self, name: str, value: str | int | float | None = None, name_localizations: dict[str, str] = ...) -> None: ...
     def to_dict(self) -> dict[str, str | int | float]: ...
 
-def option(name, input_type=None, **kwargs): ...
+def option[T, **P](name: str, input_type: type | None = None, description: str | None = None, required: bool = True) -> Callable[[Callable[P, T]], Callable[P, T]]: ... # STUB: CAP

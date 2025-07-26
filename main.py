@@ -13,6 +13,7 @@ async def on_ready():
     print(f"{bot.user} is ready and online!")
 
 @bot.slash_command(name="tres", description="Create a game of Tres")
+@discord.option("name", str, required=False)
 async def tres(ctx: discord.ApplicationContext, name: str | None):
     if not isinstance(ctx.channel, discord.TextChannel):
         await ctx.respond("This command can only be used in text channels.", ephemeral=True)
