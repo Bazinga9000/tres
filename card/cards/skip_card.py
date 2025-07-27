@@ -4,6 +4,8 @@ from card import Card
 from card.args import CardArg
 from card.color import CardColor
 from card.abc import Game
+from cap.cardview import CardView
+from cap.varview import VarView
 
 
 class SkipCard(Card):
@@ -17,3 +19,9 @@ class SkipCard(Card):
     @override
     def on_play(self, game: Game, pile_index: int, card_args: Mapping[str, CardArg]):
         game.whose_turn = (game.whose_turn + self.n)%len(game.players)
+    
+    @override
+    def on_select(self, view: CardView):
+        def on_play():
+            view.game.whose_turn = (view.game.whose_turn + self.n) % len(view.game.players)
+        return VarView(view).add_callback(on_play)

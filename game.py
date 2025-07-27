@@ -7,6 +7,7 @@ import random
 from card.color import CardColor
 from pregame import PreGame
 from card.args import CardArg
+from cap.cardview import CardView
 
 # TODO: added this for typing mid-file. delete this after we overhaul stuff -cap
 type Value = str | discord.Member | discord.User | discord.Role | discord.abc.GuildChannel | discord.Thread
@@ -160,7 +161,10 @@ class TurnStarterView(TurnTrackingView):
         if interaction.user != self.player:
             await interaction.respond("It's not your turn!", ephemeral=True)
             return
-
+        
+        
+        await interaction.respond(view=CardView(self.game), ephemeral=True)
+        return
         await interaction.respond(view=ActivePlayerView(self.game), ephemeral=True)
 
 # The view shown to the active player in an ephemeral message to play cards/choose targets/etc

@@ -13,4 +13,4 @@ dependencies = [
 [tool.pyright]
 venv = ".venv"
 typeCheckingMode = "strict"
-ignore = ["!typings"]
+ignore = ["typings"]

@@ -9,9 +9,11 @@ from card.color import CardColor
 if TYPE_CHECKING:
     from game import Game
     from card.args import CardArg # i made it worse instead --baz
+    from cap.cardview import CardView # i made it even worse -cap
 else:
     Game = Any
     CardArg = Any
+    CardView = Any
 
 class Card(abc.ABC):
     def __init__(self,
@@ -67,3 +69,8 @@ class Card(abc.ABC):
     # See wild_card for an example
     def get_args(self) -> Mapping[str, CardArg]:
         return {}
+    
+    
+    @abc.abstractmethod
+    def on_select(self, view: CardView) -> ...:
+        ...

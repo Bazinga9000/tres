@@ -2,8 +2,10 @@ from typing import Mapping, override
 
 from card import Card
 from card.args import CardArg, ColorArg
-from card.color import ALL_COLORS
+from card.color import ALL_COLORS, CardColor
 from card.abc import Game
+from cap.cardview import CardView
+from cap.varview import VarView
 
 class WildCard(Card):
     def __init__(self):
@@ -24,6 +26,14 @@ class WildCard(Card):
         return {
             "color": ColorArg(self, "Select the color for this card to become...")
         }
+    
+    @override
+    def on_select(self, view: CardView):
+        def on_play(color: CardColor):
+            self.color = color
+            self.display_name = f'{self.color_name()} {self.display_name}'
+        return VarView(view).add_color().add_callback(on_play)
+
 
 # todo: split this off after we pull out common functionality
 class WildDrawCard(WildCard):
@@ -38,3 +48,11 @@ class WildDrawCard(WildCard):
     def on_play(self, game: Game, pile_index: int, card_args: Mapping[str, CardArg]):
         super().on_play(game, pile_index, card_args)
         game.card_debt += self.n
+    
+    @override
+    def on_select(self, view: CardView):
+        def on_play(color: CardColor):
+            self.color = color
+            self.display_name = f'{self.color_name()} {self.display_name}'
+            view.game.card_debt += self.n
+        return VarView(view).add_color().add_callback(on_play)

@@ -62,10 +62,10 @@ class SelectMenu(Component):
     def to_dict(self) -> SelectMenuPayload: ...
 
 class SelectOption:
-    label: Incomplete
+    label: str # STUB: CAP
     value: Incomplete
-    description: Incomplete
-    default: Incomplete
+    description: str # STUB: CAP
+    default: bool # STUB: CAP
     def __init__(self, *, label: str, value: str = ..., description: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, default: bool = False) -> None: ...
     @property
     def emoji(self) -> str | Emoji | PartialEmoji | None: ...

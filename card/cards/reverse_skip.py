@@ -4,6 +4,8 @@ from card import Card
 from card.args import CardArg
 from card.color import CardColor
 from card.abc import Game
+from cap.cardview import CardView
+from cap.varview import VarView
 
 
 class ReverseSkipCard(Card):
@@ -19,3 +21,11 @@ class ReverseSkipCard(Card):
         game.players = game.players[::-1]
         game.whose_turn = len(game.players) - game.whose_turn - 1
         game.whose_turn = (game.whose_turn + self.n)%len(game.players)
+    
+    @override
+    def on_select(self, view: CardView):
+        def on_play():
+            view.game.players = view.game.players[::-1]
+            view.game.whose_turn = len(view.game.players) - view.game.whose_turn - 1
+            view.game.whose_turn = (view.game.whose_turn + self.n) % len(view.game.players)
+        return VarView(view).add_callback(on_play)
