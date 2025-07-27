@@ -4,8 +4,8 @@ from card import Card
 from card.args import CardArg, ColorArg
 from card.color import ALL_COLORS, CardColor
 from card.abc import Game
-from cap.cardview import CardView
-from cap.varview import VarView
+from views.cardview import CardView
+from views.varview import VarView
 
 class WildCard(Card):
     def __init__(self):

@@ -3,8 +3,8 @@ from card import Card
 from card.args import CardArg
 from card.color import CardColor
 from card.abc import Game
-from cap.cardview import CardView
-from cap.varview import VarView
+from views.cardview import CardView
+from views.varview import VarView
 
 class DrawCard(Card):
     def __init__(self, color: CardColor, n: int):

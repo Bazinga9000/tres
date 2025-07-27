@@ -34,14 +34,14 @@ class VarView[*Ts]:
             vals = (*head.get_values(), tail.get_value())
         return vals # type: ignore # necessary evil because pyright won't admit (*H, T) = *Ts
     
-    def add_player(self):
-        return VarView((self, PlayerSelect(self.view.game)))
+    def add_player(self, placeholder: str = 'Select a player.', *, skip_self: bool):
+        return VarView((self, PlayerSelect(self.view.game, placeholder, skip_self=skip_self)))
     
-    def add_card(self):
-        return VarView((self, CardSelect(self.view.game)))
+    def add_card(self, placeholder: str = 'Select a card.', *, requires_playable: bool):
+        return VarView((self, CardSelect(self.view.game, placeholder, requires_playable=requires_playable)))
     
-    def add_color(self):
-        return VarView((self, ColorSelect(self.view.game)))
+    def add_color(self, placeholder: str = 'Select a color.'):
+        return VarView((self, ColorSelect(self.view.game, placeholder)))
     
     def add_callback(self, callback: Callable[[*Ts], None]):
         async def wrapped(interaction: Interaction):

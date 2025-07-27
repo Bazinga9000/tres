@@ -12,7 +12,7 @@ from card.color import CardColor
 if TYPE_CHECKING:
     from game import Game
     from card.args import CardArg # i made it worse instead --baz
-    from cap.cardview import CardView # i made it even worse -cap
+    from views.cardview import CardView # i made it even worse -cap
 else:
     Game = Any
     CardArg = Any
@@ -62,6 +62,10 @@ class Card(abc.ABC):
             return False
         return bool(top_card.color & self.color) or self.card_type == top_card.card_type
 
+    def playable_piles(self, game: Game):
+        '''Returns a list of piles that this card can be played on.'''
+        
+        return [i for i in range(len(game.piles)) if self.can_play(game, i)]
 
     # Called *after* the card is put onto the top of its corresponding pile.
     def on_play(self, game: Game, pile_index: int, card_args: Mapping[str, CardArg]):

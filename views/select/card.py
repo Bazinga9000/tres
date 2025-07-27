@@ -1,28 +1,26 @@
 from typing import TYPE_CHECKING, Any, override
 from uuid import UUID
 
-from discord.ui import Select, View
+
 from .base import BaseSelect
 
 if TYPE_CHECKING:
     from card import Card
+    from game import Game
 else:
-    Card = Any
+    Card = Game = Any
 
 
 class CardSelect(BaseSelect[Card]):
-    @override
-    def initialize_select(self) -> Select[View]:
-        select = Select[View](placeholder='Select a card.')
+    def __init__(self, game: Game, placeholder: str, *, requires_playable: bool):
+        super().__init__(game, placeholder)
         for card in self.game.hands[self.game.players[self.game.whose_turn]]:
-            select.add_option(label=card.display_name, value=str(card.uuid))
-        return select
+            if card.playable_piles(self.game) or not requires_playable:
+                self.select.add_option(label=card.display_name, value=str(card.uuid))
     
     @override
     def get_value(self) -> Card:
-        if not self.select.values:
-            raise ValueError("No card selected.")
-        uuid = UUID(str(self.select.values[0]))
+        uuid = UUID(self.get_raw_value())
         hand = self.game.hands[self.game.players[self.game.whose_turn]]
         card = hand.lookup_card(uuid)
         if not card:

@@ -1,8 +1,8 @@
 from typing import override
 import card.abc
 from card.color import CardColor
-from cap.cardview import CardView
-from cap.varview import VarView
+from views.cardview import CardView
+from views.varview import VarView
 
 class NumberCard(card.abc.Card):
     def __init__(self, color: CardColor, n: int):

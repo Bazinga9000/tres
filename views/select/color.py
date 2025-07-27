@@ -1,19 +1,19 @@
-from typing import override
-from discord.ui import Select, View
+from typing import TYPE_CHECKING, Any, override
 from card import CardColor
 from .base import BaseSelect
 
+if TYPE_CHECKING:
+    from game import Game
+else:
+    Game = Any
+
 
 class ColorSelect(BaseSelect[CardColor]):
-    @override
-    def initialize_select(self) -> Select[View]:
-        select = Select[View](placeholder='Select a color.')
+    def __init__(self, game: Game, placeholder: str):
+        super().__init__(game, placeholder)
         for color in CardColor:
-            select.add_option(label=(color.name or '???').capitalize(), value=str(color.value))
-        return select
+            self.select.add_option(label=(color.name or '???').capitalize(), value=str(color.value))
     
     @override
     def get_value(self) -> CardColor:
-        if not self.select.values:
-            raise ValueError('No color selected.')
-        return CardColor(int(str(self.select.values[0])))
+        return CardColor(int(self.get_raw_value()))

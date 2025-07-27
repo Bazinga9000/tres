@@ -30,25 +30,26 @@ class CardView(View):
         self.pass_button = Button[CardView](label='Pass turn', style=ButtonStyle.blurple, disabled=True)
         async def pass_callback(interaction: Interaction):
             player = self.game.players[self.game.whose_turn]
-            await self.game.end_turn()
             await self.game.channel.send(f'{player.display_name} passed their turn!')
+            await self.game.end_turn()
             await interaction.response.defer()
             await interaction.delete_original_response()
         self.pass_button.callback = pass_callback
         
         self.play_button = Button[CardView](label='Play selected card', style=ButtonStyle.success, disabled=True)
         
-        self.card_select = CardSelect(game)
+        self.card_select = CardSelect(game, 'Choose a card to play.', requires_playable=True)
         async def card_callback(interaction: Interaction):
             for select in self.selects:
                 self.remove_item(select.select)
             self.selects.clear()
             self.unset.clear()
             
-            pile_select = PileSelect(game)
+            card = self.card_select.get_value()
+            
+            pile_select = PileSelect(game, f'Select a pile to play {card.display_name} onto.', playable_by=card)
             self.add_select(pile_select)
             
-            card = self.card_select.get_value()
             on_play = card.on_select(self)
             
             async def play_callback(interaction: Interaction):

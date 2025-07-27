@@ -9,7 +9,7 @@ from pregame import PreGame
 from card.args import CardArg
 from game_components import Hand
 import uuid
-from cap.cardview import CardView
+from views.cardview import CardView
 
 # TODO: added this for typing mid-file. delete this after we overhaul stuff -cap
 type Value = str | discord.Member | discord.User | discord.Role | discord.abc.GuildChannel | discord.Thread
