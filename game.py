@@ -1,15 +1,9 @@
 from collections.abc import Callable
 from typing import Coroutine, Self
 import discord
-from card.abc import Card
-from card.reverse_card import ReverseCard
-from card.reverse_skip import ReverseSkipCard
-from card.skip_card import SkipCard
-from card.wild_card import WildCard, WildDrawCard
+import card
 import game_db
 import random
-from card.number_card import NumberCard
-from card.basic_draw_card import DrawCard
 from card.color import CardColor
 from pregame import PreGame
 from card.args import CardArg
@@ -36,23 +30,24 @@ class Game:
         self.whose_turn = 0
 
         # todo more robust deck implementation (for e.g procedural deck)
-        self.deck: list[Card] = []
+        self.deck: list[card.Card] = []
         for c in [CardColor.RED, CardColor.ORANGE, CardColor.YELLOW, CardColor.GREEN, CardColor.BLUE, CardColor.PURPLE]:
             for n in range(1,16):
-                self.deck.append(NumberCard(c,n))
+                self.deck.append(card.NumberCard(c,n))
             for _ in range(2):
-                self.deck.append(DrawCard(c, 2))     # Draw 2s
-                self.deck.append(ReverseCard(c))     # Reverse
-                self.deck.append(SkipCard(c))        # Single Skip
-                self.deck.append(ReverseSkipCard(c)) # Reverse Skip
-                self.deck.append(WildDrawCard(4))    # Wild Draw 4
-            for _ in range(5):
-                self.deck.append(WildCard())                # Wild Cards
-            self.deck.append(NumberCard(CardColor.RED, 40)) # Red 40
+                self.deck.append(card.DrawCard(c, 2))     # Draw 2s
+                self.deck.append(card.ReverseCard(c))     # Reverse
+                self.deck.append(card.SkipCard(c))        # Single Skip
+                self.deck.append(card.ReverseSkipCard(c)) # Reverse Skip
+        for _ in range(2):
+            self.deck.append(card.WildDrawCard(4))        # Wild Draw 4
+        for _ in range(5):
+            self.deck.append(card.WildCard())             # Wild Cards
+        self.deck.append(card.Red40())                    # Red 40
 
         random.shuffle(self.deck)
 
-        self.hands: dict[discord.User | discord.Member, list[Card]] = {}
+        self.hands: dict[discord.User | discord.Member, list[card.Card]] = {}
         for p in self.players:
             self.hands[p] = [self.deck.pop() for _ in range(7)]
 
@@ -327,7 +322,7 @@ class ActivePlayerView(TurnTrackingView):
         self.stop()
         await self.game.end_turn()
 
-    def make_card_arg_selectors(self, card: Card):
+    def make_card_arg_selectors(self, card: card.Card):
         def make_selector(name: str, arg: CardArg):
             self.requested_args[name] = arg
 
