@@ -1,5 +1,6 @@
 import abc
 from typing import TYPE_CHECKING, Any, Mapping
+import uuid
 
 import discord
 
@@ -26,6 +27,10 @@ class Card(abc.ABC):
         self.number_value = number_value
         self.card_type = card_type
         self.can_play_on_debt = can_play_on_debt
+
+        # The uuid of a card.
+        # Todo. Have it change if the card is cloned to ensure uniqueness
+        self.uuid = uuid.uuid4()
 
         # The display name of the card. Used to textually represent a card.
         # This defualt value should be overridden if the card has a special naming scheme (e.g is in only one color)

@@ -7,6 +7,8 @@ import random
 from card.color import CardColor
 from pregame import PreGame
 from card.args import CardArg
+from game_components import Hand
+import uuid
 
 # TODO: added this for typing mid-file. delete this after we overhaul stuff -cap
 type Value = str | discord.Member | discord.User | discord.Role | discord.abc.GuildChannel | discord.Thread
@@ -47,9 +49,12 @@ class Game:
 
         random.shuffle(self.deck)
 
-        self.hands: dict[discord.User | discord.Member, list[card.Card]] = {}
+        self.hands: dict[discord.User | discord.Member, Hand] = {}
         for p in self.players:
-            self.hands[p] = [self.deck.pop() for _ in range(7)]
+            h = Hand()
+            for _ in range(7):
+                h.add_card(self.deck.pop())
+            self.hands[p] = h
 
         self.piles = [[self.deck.pop()]]
 
@@ -74,7 +79,7 @@ class Game:
         turn_order = " > ".join(f"**{u.display_name}**" if i == self.whose_turn else u.display_name for (i,u) in enumerate(self.players))
         e.add_field(name="Turn Order", value=turn_order)
 
-        hand = "\n".join(c.display_name for c in self.hands[active_player])
+        hand = self.hands[active_player].display_all_cards()
         e.add_field(name="Your Hand", value=hand)
 
         e.add_field(name="Top Card", value=self.piles[0][-1].display_name)
@@ -100,9 +105,8 @@ class Game:
     def draw_card(self, player: discord.User | discord.Member, n: int = 1):
         for _ in range(n):
             c = self.deck.pop()
+            self.hands[player].add_card(c)
             c.on_draw(self, player)
-            self.hands[player].append(c)
-        # todo: sort hands here
 
     def find_player_id(self, player_id: int):
         for p in self.players:
@@ -171,7 +175,7 @@ class ActivePlayerView(TurnTrackingView):
         self.can_pass = False
 
         # Which card does the player want to play?
-        self.selected_card_index = None
+        self.selected_card = None
         # Where do they want to play it?
         self.selected_pile = None
 
@@ -221,12 +225,12 @@ class ActivePlayerView(TurnTrackingView):
 
         # Evaluate how many cards in the player's hand can be played, and where, and generate the requisite select options
         playable: list[discord.SelectOption] = []
-        for cn,c in enumerate(g.hands[self.player]):
+        for c in g.hands[self.player]:
             for pn in range(len(g.piles)):
                 if c.can_play(g, pn):
                     playable.append(discord.SelectOption(
                         label = f"{c.display_name} onto pile #{pn+1}",
-                        value = f"{cn},{pn}" # Values can only be strings, so this is easily parseable int,int
+                        value = f"{c.uuid},{pn}" # Values can only be strings, so this is easily parseable int,int
                     ))
 
         if playable == []: # no playable cards, no need to mess with the select modal
@@ -271,7 +275,7 @@ class ActivePlayerView(TurnTrackingView):
 
     # Should the play button be enabled?
     def can_press_play(self):
-        if self.selected_pile is None or self.selected_card_index is None: # If you haven't selected a card...
+        if self.selected_pile is None or self.selected_card is None: # If you haven't selected a card...
             return False # You definitely can't play.
 
         for v in self.requested_args.values(): # If the selected card has any arguments...
@@ -283,11 +287,11 @@ class ActivePlayerView(TurnTrackingView):
     async def play_callback(self, interaction: discord.Interaction):
         g = self.game
 
-        assert self.selected_card_index is not None and self.selected_pile is not None, "Selected card and pile must be set before playing a card"
-        chosen_card = g.hands[self.player].pop(self.selected_card_index)
-        g.piles[self.selected_pile].append(chosen_card)
+        assert self.selected_card is not None and self.selected_pile is not None, "Selected card and pile must be set before playing a card"
+        self.game.hands[self.player].remove_card(self.selected_card)
+        g.piles[self.selected_pile].append(self.selected_card)
 
-        chosen_card.on_play(g, self.selected_pile, self.requested_args)
+        self.selected_card.on_play(g, self.selected_pile, self.requested_args)
         await self.stop_view_and_end(interaction)
 
     async def card_select_callback(self, interaction: discord.Interaction):
@@ -295,7 +299,8 @@ class ActivePlayerView(TurnTrackingView):
         raw_value = self.card_selector.values[0]
         assert isinstance(raw_value, str), "Card selector values must be strings"
         chosen = raw_value.split(",")
-        self.selected_card_index = int(chosen[0])
+        self.selected_card = self.game.hands[self.player].lookup_card(uuid.UUID(chosen[0]))
+        assert self.selected_card is not None
         self.selected_pile = int(chosen[1])
 
         # Find the selected value, set it as default so view updates don't change it
@@ -307,8 +312,7 @@ class ActivePlayerView(TurnTrackingView):
             self.remove_item(v)
         self.requested_args = {}
 
-        # This also sets requested_args
-        self.card_arg_selectors = self.make_card_arg_selectors(self.game.hands[self.player][self.selected_card_index])
+        self.card_arg_selectors = self.make_card_arg_selectors(self.selected_card)
         for s in self.card_arg_selectors.values():
             self.add_item(s)
 
