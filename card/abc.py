@@ -1,22 +1,23 @@
 import abc
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Awaitable, Mapping
+from typing import TYPE_CHECKING, Any, Awaitable
 import uuid
 
-import discord
 from discord import Interaction
 
 from card.color import CardColor
 
+
 # TODO: this solves circular dependency, but it's probably better to just refactor so that the type doesn't exist in the first place -cap
 if TYPE_CHECKING:
     from game import Game
-    from card.args import CardArg # i made it worse instead --baz
     from views.cardview import CardView # i made it even worse -cap
+    from game_components import Player # absolute cinema - baz
 else:
     Game = Any
     CardArg = Any
     CardView = Any
+    Player = Any
 
 class Card(abc.ABC):
     def __init__(self,
@@ -64,24 +65,13 @@ class Card(abc.ABC):
 
     def playable_piles(self, game: Game):
         '''Returns a list of piles that this card can be played on.'''
-        
+
         return [i for i in range(len(game.piles)) if self.can_play(game, i)]
 
-    # Called *after* the card is put onto the top of its corresponding pile.
-    def on_play(self, game: Game, pile_index: int, card_args: Mapping[str, CardArg]):
-        pass
-
     # Called *after* the card is put into the hand
-    def on_draw(self, game: Game, player: discord.User | discord.Member):
+    def on_draw(self, game: Game, player: Player):
         pass
 
-    # Return a dictionary mapping internal names to CardArgs.
-    # on_play (above) will be passed a dictionary mapping these names to the list of given arguments
-    # See wild_card for an example
-    def get_args(self) -> Mapping[str, CardArg]:
-        return {}
-    
-    
     @abc.abstractmethod
     def on_select(self, view: CardView) -> Callable[[Interaction], Awaitable[None]]:
         '''Runs when the card is selected in the card view.'''

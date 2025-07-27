@@ -7,7 +7,7 @@ from views.varview import VarView
 class NumberCard(card.abc.Card):
     def __init__(self, color: CardColor, n: int):
         super().__init__(color, n, n, str(n), False)
-    
+
     @override
     def on_select(self, view: CardView):
         def on_play():

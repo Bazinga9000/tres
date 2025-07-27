@@ -8,8 +8,10 @@ class Player:
         self.score = 0
         self.hand = Hand()
 
+    @property
     def display_name(self) -> str:
         return self.discord_user.display_name
 
+    @property
     def display_avatar(self) -> discord.Asset:
         return self.discord_user.display_avatar
