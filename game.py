@@ -36,6 +36,9 @@ class Game:
                 self.deck.append(card.ReverseCard(c))     # Reverse
                 self.deck.append(card.SkipCard(c))        # Single Skip
                 self.deck.append(card.ReverseSkipCard(c)) # Reverse Skip
+            self.deck.append(card.HandSwap(c))        # Hand Swap
+
+        # Cards with fixed colors
         for _ in range(2):
             self.deck.append(card.WildDrawCard(4))        # Wild Draw 4
         for _ in range(5):

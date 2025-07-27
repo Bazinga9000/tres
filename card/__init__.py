@@ -6,6 +6,7 @@ from card.cards.reverse_card import ReverseCard
 from card.cards.skip_card import SkipCard
 from card.cards.reverse_skip import ReverseSkipCard
 from card.cards.wild_card import WildCard, WildDrawCard
+from card.cards.hand_swap import HandSwap
 
 # Empty lambda to produce multiple copies of red 40
 Red40 = lambda: NumberCard(CardColor.RED, 40)
@@ -18,5 +19,6 @@ __all__ = [
     'SkipCard',
     'ReverseSkipCard',
     'WildCard', 'WildDrawCard',
-    'Red40'
+    'Red40',
+    'HandSwap'
 ]
