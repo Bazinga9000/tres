@@ -1,8 +1,10 @@
 import abc
-from typing import TYPE_CHECKING, Any, Mapping
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Awaitable, Mapping
 import uuid
 
 import discord
+from discord import Interaction
 
 from card.color import CardColor
 
@@ -77,5 +79,5 @@ class Card(abc.ABC):
     
     
     @abc.abstractmethod
-    def on_select(self, view: CardView) -> ...:
-        ...
+    def on_select(self, view: CardView) -> Callable[[Interaction], Awaitable[None]]:
+        '''Runs when the card is selected in the card view.'''

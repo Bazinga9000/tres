@@ -32,7 +32,7 @@ class VarView[*Ts]:
         if self.data:
             head, tail = self.data
             vals = (*head.get_values(), tail.get_value())
-        return vals # type: ignore # necessary evil
+        return vals # type: ignore # necessary evil because pyright won't admit (*H, T) = *Ts
     
     def add_player(self):
         return VarView((self, PlayerSelect(self.view.game)))
@@ -47,6 +47,4 @@ class VarView[*Ts]:
         async def wrapped(interaction: Interaction):
             values = self.get_values()
             callback(*values)
-            await interaction.response.edit_message(content='hi', view=None)
-        self.view.play_button.callback = wrapped
-        return ...
+        return wrapped

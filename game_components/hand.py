@@ -2,7 +2,7 @@ from card import Card
 import uuid
 
 # A collection of cards in a Player's hand
-class Hand():
+class Hand:
     def __init__(self):
         self.cards : list[Card] = []
 

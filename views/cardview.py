@@ -4,8 +4,9 @@ from discord import ButtonStyle
 from discord.interactions import Interaction
 from discord.ui import Button, View
 
-from .select.card import CardSelect
 from .select.base import BaseSelect
+from .select.card import CardSelect
+from .select.pile import PileSelect
 
 if TYPE_CHECKING:
     from game import Game
@@ -26,13 +27,13 @@ class CardView(View):
             await interaction.response.edit_message(view=self)
         self.draw_button.callback = draw_callback
         
-        
         self.pass_button = Button[CardView](label='Pass turn', style=ButtonStyle.blurple, disabled=True)
         async def pass_callback(interaction: Interaction):
             player = self.game.players[self.game.whose_turn]
             await self.game.end_turn()
             await self.game.channel.send(f'{player.display_name} passed their turn!')
-            await interaction.response.edit_message(content='', view=None)
+            await interaction.response.defer()
+            await interaction.delete_original_response()
         self.pass_button.callback = pass_callback
         
         self.play_button = Button[CardView](label='Play selected card', style=ButtonStyle.success, disabled=True)
@@ -44,11 +45,31 @@ class CardView(View):
             self.selects.clear()
             self.unset.clear()
             
+            pile_select = PileSelect(game)
+            self.add_select(pile_select)
+            
+            card = self.card_select.get_value()
+            on_play = card.on_select(self)
+            
+            async def play_callback(interaction: Interaction):
+                player = self.game.players[self.game.whose_turn]
+                hand = self.game.hands[player]
+                card = self.card_select.get_value()
+                pile = pile_select.get_value()
+                
+                hand.remove_card(card)
+                game.piles[pile].append(card)
+                
+                await on_play(interaction)
+                await interaction.response.defer()
+                await interaction.delete_original_response()
+                await self.game.end_turn()
+            
+            self.play_button.callback = play_callback
+            
             for option in self.card_select.select.options:
                 option.default = option.value in self.card_select.select.values
             
-            card = self.card_select.get_value()
-            card.on_select(self)
             self.play_button.disabled = bool(self.unset)
             await interaction.response.edit_message(view=self)
         self.card_select.select.callback = card_callback

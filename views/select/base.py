@@ -14,7 +14,7 @@ else:
 class BaseSelect[T](ABC):
     def __init__(self, game: Game):
         self.game = game
-        self.select = self.initialize_select()
+        self.select = self.initialize_select() # TODO: we could lie a little and force this to be str
     
     @abstractmethod
     def initialize_select(self) -> Select[View]:
