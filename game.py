@@ -84,11 +84,18 @@ class Game:
     # Performs cleanup at the end of a turn and then starts the next turn if needed
     async def end_turn(self):
         if len(self.active_player.hand) == 0:
-            # todo: actual point values
+            # Assign penalty points
+            for p in self.players:
+                # todo: cards might fuck with penalty points more than just adding them
+                for c in p.hand:
+                    p.score += c.penalty_points
+
             self.round += 1
             self.turn = 1
             game_db.games[self.uuid] = None # End the game (that is, remove it from the database)
             await self.channel.send(f"The game is over! **{self.active_player.display_name}** has won!")
+            # todo - sort this
+            await self.channel.send(f"**Final Scores**\n{'\n'.join(f"{p.display_name} - {p.score} points" for p in self.players)}")
         else:
             self.whose_turn = (self.whose_turn + 1) % len(self.players)
             self.turn += 1

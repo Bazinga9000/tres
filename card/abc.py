@@ -22,13 +22,13 @@ else:
 class Card(abc.ABC):
     def __init__(self,
         color: CardColor, # The card's color
-        point_value: int, # How much the card is worth when unplayed at the end of the round
+        penalty_points: int, # How much the card is worth when unplayed at the end of the round
         number_value: int, # The card's value, if treated as a number in-game
         card_type: str, # The type of the card (by default, cards are playable on cards of the same type)
         can_play_on_debt: bool # Can you play this card while you have card debt?
     ):
         self.color = color
-        self.point_value = point_value
+        self.penalty_points = penalty_points
         self.number_value = number_value
         self.card_type = card_type
         self.can_play_on_debt = can_play_on_debt
