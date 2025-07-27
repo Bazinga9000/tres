@@ -1,13 +1,12 @@
 from collections.abc import Callable
 from typing import Coroutine
 import discord
-import card
 import game_db
 import random
-from card.color import CardColor
 from pregame import PreGame
 from game_components import Player
 from views.cardview import CardView
+from game_components.decks import TestDeck
 
 class Game:
     def __init__(self, pregame: PreGame):
@@ -27,31 +26,13 @@ class Game:
         self.whose_turn = 0
 
         # todo more robust deck implementation (for e.g procedural deck)
-        self.deck: list[card.Card] = []
-        for c in [CardColor.RED, CardColor.ORANGE, CardColor.YELLOW, CardColor.GREEN, CardColor.BLUE, CardColor.PURPLE]:
-            for n in range(1,16):
-                self.deck.append(card.NumberCard(c,n))
-            for _ in range(2):
-                self.deck.append(card.DrawCard(c, 2))     # Draw 2s
-                self.deck.append(card.ReverseCard(c))     # Reverse
-                self.deck.append(card.SkipCard(c))        # Single Skip
-                self.deck.append(card.ReverseSkipCard(c)) # Reverse Skip
-            self.deck.append(card.HandSwap(c))        # Hand Swap
-
-        # Cards with fixed colors
-        for _ in range(2):
-            self.deck.append(card.WildDrawCard(4))        # Wild Draw 4
-        for _ in range(5):
-            self.deck.append(card.WildCard())             # Wild Cards
-        self.deck.append(card.Red40())                    # Red 40
-
-        random.shuffle(self.deck)
+        self.deck = TestDeck()
 
         for p in self.players:
             for _ in range(7):
-                p.hand.add_card(self.deck.pop())
+                p.hand.add_card(self.deck.draw_from_deck())
 
-        self.piles = [[self.deck.pop()]]
+        self.piles = [[self.deck.draw_from_deck()]]
 
         # Card Debt = cards that must be drawn by the next player in lieu of taking a turn
         self.card_debt = 0
@@ -107,7 +88,7 @@ class Game:
     # Draw n cards into a player's hand
     def draw_card(self, player: Player, n: int = 1):
         for _ in range(n):
-            c = self.deck.pop()
+            c = self.deck.draw_from_deck()
             player.hand.add_card(c)
             c.on_draw(self, player)
 
