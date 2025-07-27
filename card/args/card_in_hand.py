@@ -1,3 +1,4 @@
+import uuid
 import card.args.abc as ca
 import discord
 
@@ -8,14 +9,14 @@ class CardInHandArg(ca.CardArg):
         self.restrict_to_playable = restrict_to_playable
 
     def populate(self, game: ca.Game, player: discord.Member | discord.User, selected_pile: int, str_args: list[str]):
-        self.values = [game.hands[player][int(i)] for i in str_args]
+        self.values = [game.hands[player].lookup_card(uuid.UUID(i)) for i in str_args]
 
 
     def generate(self, game: ca.Game, player: discord.Member | discord.User, selected_pile: int) -> list[tuple[str,str]]:
         options : list[tuple[str, str]] = []
-        for (k,c) in enumerate(game.hands[player]):
+        for c in game.hands[player]:
             if c != self.card: # A card can never select itself
                 if (not self.restrict_to_playable) or c.can_play(game, selected_pile):
-                   options.append((c.display_name, str(k)))
+                   options.append((c.display_name, str(c.uuid)))
 
         return options
