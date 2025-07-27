@@ -1,2 +1,3 @@
 from game_components.hand import Hand
-__all__ = ['Hand']
+from game_components.player import Player
+__all__ = ['Hand', 'Player']
