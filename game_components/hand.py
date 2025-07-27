@@ -1,5 +1,11 @@
-from card import Card
 import uuid
+from typing import TYPE_CHECKING, Any
+
+# yet another circular dependency
+if TYPE_CHECKING:
+    from card import Card
+else:
+    Card = Any
 
 # A collection of cards in a Player's hand
 class Hand:
