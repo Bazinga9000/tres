@@ -9,10 +9,6 @@ from pregame import PreGame
 from game_components import Player
 from views.cardview import CardView
 
-# TODO: added this for typing mid-file. delete this after we overhaul stuff -cap
-type Value = str | discord.Member | discord.User | discord.Role | discord.abc.GuildChannel | discord.Thread
-
-
 class Game:
     def __init__(self, pregame: PreGame):
         # Overwrite the pregame with the real game
