@@ -13,6 +13,7 @@ def make_test_deck() -> list[card.Card]:
             out.append(card.SkipCard(c))        # Single Skip
             out.append(card.ReverseSkipCard(c)) # Reverse Skip
         out.append(card.HandSwap(c))        # Hand Swap
+        out.append(card.SeatSwap(c))        # Seat Swap
 
     # Cards with fixed colors
     for _ in range(2):
