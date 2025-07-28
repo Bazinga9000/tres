@@ -17,14 +17,15 @@ else:
 class CardView(View):
     def __init__(self, game: Game):
         self.game = game
-
+        
         draw_button_label = f'Pay Card Debt ({self.game.card_debt})' if self.game.card_debt > 0 else 'Draw a card'
         self.draw_button = Button[CardView](label=draw_button_label, style=ButtonStyle.danger)
         async def draw_callback(interaction: Interaction):
             if self.game.card_debt <= 0:
                 self.game.draw_card(self.game.active_player)
                 self.pass_button.disabled = False
-                self.update_card_select()
+                self.remove_item(self.card_select)
+                self.update_card_select(selected=self.card_select.values)
                 await self.game.channel.send(f'{self.game.active_player.display_name} drew a card!')
                 await interaction.response.edit_message(view=self)
             else:
@@ -32,35 +33,27 @@ class CardView(View):
                 await self.game.channel.send(f'{self.game.active_player.display_name} paid the card debt ({self.game.card_debt})!')
                 self.game.card_debt = 0
                 await self.end_turn_and_die(interaction)
-
-
-
-        self.draw_button.callback = draw_callback
-
+        
+        
+        
+        self.draw_button.callback   = draw_callback
+        
         self.pass_button = Button[CardView](label='Pass turn', style=ButtonStyle.blurple, disabled=True)
         async def pass_callback(interaction: Interaction):
             player = self.game.players[self.game.whose_turn]
             await self.game.channel.send(f'{player.display_name} passed their turn!')
             await self.end_turn_and_die(interaction)
-
+        
         self.pass_button.callback = pass_callback
-
+        
         self.play_button = Button[CardView](label='Play selected card', style=ButtonStyle.success, disabled=True)
         self.selected_card: int = -1
         self.selects: set[BaseSelect] = set()
         self.unset: set[BaseSelect] = set()
         super().__init__(self.draw_button, self.pass_button, self.play_button)
-        self.card_select = self.generate_card_select()
         self.update_card_select()
 
-
-    def update_card_select(self):
-        self.remove_item(self.card_select)
-        self.card_select = self.generate_card_select()
-        if len(self.card_select.options) > 0:
-            self.add_item(self.card_select)
-
-    def generate_card_select(self):
+    def update_card_select(self, *, selected: list[str] | None = None):
         # TODO: this is code duplication from argbuilder because there are no longer reusable classes for selects
         def converter(value: str):
             card = self.game.active_player.hand.lookup_card(UUID(value))
@@ -70,7 +63,11 @@ class CardView(View):
         card_select = TypedSelect(converter)
         card_select.placeholder = 'Choose a card to play.'
         card_select.options = [
-            SelectOption(label=card.display_name, value=str(card.uuid))
+            SelectOption(
+                label=card.display_name,
+                value=str(card.uuid),
+                default=str(card.uuid) in (selected or [])
+            )
             for card in self.game.active_player.hand
             if card.playable_piles(self.game)
         ]
@@ -80,7 +77,7 @@ class CardView(View):
                 self.remove_item(select)
             self.selects.clear()
             self.unset.clear()
-
+            
             card = card_select.get_value()
             
             # TODO: also code duplication
@@ -112,22 +109,25 @@ class CardView(View):
                 await self.end_turn_and_die(interaction)
 
             self.play_button.callback = play_callback
-
+            
             for option in card_select.options:
                 option.default = option.value in card_select.values
-
+            
             self.play_button.disabled = bool(self.unset)
             await interaction.response.edit_message(view=self)
         card_select.callback = card_callback
         
+        if len(card_select.options) > 0:
+            self.add_item(card_select)
+            self.selects.remove(card_select)
+        
+        self.card_select = card_select
         return card_select
-
+    
     @override
     def add_item(self, item: Item[View]):
         if isinstance(item, BaseSelect):
-            self.play_button.disabled = True
             self.selects.add(item)
-            self.unset.add(item)
             def on_select(valid: bool):
                 if valid:
                     self.unset.discard(item)
@@ -136,9 +136,10 @@ class CardView(View):
                 else:
                     self.unset.add(item)
                     self.play_button.disabled = True
+            on_select(item.has_valid_selection())
             item.on_select += on_select
         super().add_item(item)
-
+    
     async def end_turn_and_die(self, interaction: Interaction):
         self.stop()
         await self.game.end_turn()

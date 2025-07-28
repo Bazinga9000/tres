@@ -1,3 +1,4 @@
+from typing import override
 from discord import Interaction
 from discord.ui import Select, View
 
@@ -8,6 +9,11 @@ class BaseSelect(Select[View]):
     def __init__(self):
         super().__init__()
         self.on_select = Event[bool]()
+    
+    @property
+    @override
+    def values(self) -> list[str]:
+        return [str(value) for value in super().values or [option.value for option in self.options if option.default]]
     
     async def callback(self, interaction: Interaction):
         for option in self.options:
@@ -21,7 +27,4 @@ class BaseSelect(Select[View]):
     def get_raw_value(self) -> str:
         if not self.values:
             raise ValueError('No selection.')
-        return str(self.values[0])
-    
-    def get_raw_values(self) -> list[str]:
-        return [str(value) for value in self.values]
+        return self.values[0]
