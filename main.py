@@ -15,7 +15,7 @@ async def on_ready():
     # Leave $INSTANCE unset on prod
     instance = os.getenv('INSTANCE')
     if instance is not None:
-        await bot.change_presence(activity=discord.CustomActivity(f"Running on {instance}")) # todo: make pyright happy
+        await bot.change_presence(activity=discord.CustomActivity(f"Running on {instance}"))
 
 @bot.slash_command(name="tres", description="Create a game of Tres")
 @discord.option("name", str, required=False)
