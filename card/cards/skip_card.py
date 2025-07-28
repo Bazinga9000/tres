@@ -2,8 +2,8 @@ from typing import override
 
 from card import Card
 from card.color import CardColor
-from views.cardview import CardView
-from views.varview import VarView
+from . import Game
+from views.argbuilder import ArgBuilder
 
 
 class SkipCard(Card):
@@ -13,9 +13,12 @@ class SkipCard(Card):
         cn = self.color_name()
         self.display_name = f"{cn} Skip {n}" if n > 1 else f"{cn} Skip"
         self.n = n
-
+    
+    @property
     @override
-    def on_select(self, view: CardView):
-        def on_play():
-            view.game.whose_turn = (view.game.whose_turn + self.n) % len(view.game.players)
-        return VarView(view).add_callback(on_play)
+    def args(self):
+        return ArgBuilder().with_callback(self.on_play)
+    
+    def on_play(self, game: Game):
+        game.whose_turn += self.n
+        game.whose_turn %= len(game.players)

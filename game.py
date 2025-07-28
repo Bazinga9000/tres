@@ -6,7 +6,7 @@ import random
 from pregame import PreGame
 from game_components import Player
 from views.cardview import CardView
-from game_components.decks import TestDeck
+import game_components.decks as decks
 
 class Game:
     def __init__(self, pregame: PreGame):
@@ -26,7 +26,7 @@ class Game:
         self.whose_turn = 0
 
         # todo more robust deck implementation (for e.g procedural deck)
-        self.deck = TestDeck()
+        self.deck = decks.TestDeck()
 
         for p in self.players:
             for _ in range(7):

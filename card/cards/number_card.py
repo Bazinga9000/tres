@@ -1,15 +1,6 @@
-from typing import override
-import card.abc
-from card.color import CardColor
-from views.cardview import CardView
-from views.varview import VarView
+from card import Card, CardColor
 
-class NumberCard(card.abc.Card):
+
+class NumberCard(Card):
     def __init__(self, color: CardColor, n: int):
         super().__init__(color, n, n, str(n), False)
-
-    @override
-    def on_select(self, view: CardView):
-        def on_play():
-            pass
-        return VarView(view).add_callback(on_play)

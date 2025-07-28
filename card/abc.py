@@ -1,17 +1,15 @@
 import abc
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Awaitable
+from typing import TYPE_CHECKING, Any
 import uuid
 
-from discord import Interaction
 
 from card.color import CardColor
+from views.argbuilder import ArgBuilder, ArgBuilderBase
 
 
 # TODO: this solves circular dependency, but it's probably better to just refactor so that the type doesn't exist in the first place -cap
 if TYPE_CHECKING:
     from game import Game
-    from views.cardview import CardView # i made it even worse -cap
     from game_components import Player # absolute cinema - baz
 else:
     Game = Any
@@ -40,7 +38,13 @@ class Card(abc.ABC):
         # The display name of the card. Used to textually represent a card.
         # This defualt value should be overridden if the card has a special naming scheme (e.g is in only one color)
         self.display_name = f"{self.color_name()} {self.card_type}".replace("_"," ").title()
-
+    
+    @property
+    def args(self) -> ArgBuilderBase:
+        '''Returns the arguments for this card.'''
+        
+        return ArgBuilder()
+    
     # Gets the color name of this card, used to
     def color_name(self):
 
@@ -71,7 +75,3 @@ class Card(abc.ABC):
     # Called *after* the card is put into the hand
     def on_draw(self, game: Game, player: Player):
         pass
-
-    @abc.abstractmethod
-    def on_select(self, view: CardView) -> Callable[[Interaction], Awaitable[None]]:
-        '''Runs when the card is selected in the card view.'''

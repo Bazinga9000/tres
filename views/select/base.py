@@ -1,27 +1,27 @@
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
-
+from discord import Interaction
 from discord.ui import Select, View
 
-if TYPE_CHECKING:
-    from game import Game
-else:
-    Game = Any
+from util.event import Event
 
 
-class BaseSelect[T](ABC):
-    def __init__(self, game: Game, placeholder: str):
-        self.game = game
-        self.select = Select[View](placeholder=placeholder)
+class BaseSelect(Select[View]):
+    def __init__(self):
+        super().__init__()
+        self.on_select = Event[bool]()
     
-    @abstractmethod
-    def get_value(self) -> T:
-        ...
+    async def callback(self, interaction: Interaction):
+        for option in self.options:
+            option.default = option.value in self.values
+        self.on_select(self.has_valid_selection())
+        await interaction.response.edit_message(view=self.view)
+    
+    def has_valid_selection(self) -> bool:
+        return self.min_values <= len(self.values) <= self.max_values
     
     def get_raw_value(self) -> str:
-        if not self.select.values:
+        if not self.values:
             raise ValueError('No selection.')
-        return str(self.select.values[0])
+        return str(self.values[0])
     
     def get_raw_values(self) -> list[str]:
-        return [str(value) for value in self.select.values]
+        return [str(value) for value in self.values]

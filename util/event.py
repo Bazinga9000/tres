@@ -35,8 +35,9 @@ class Event[**P]:
     def __call__(self, *args: P.args, **kwargs: P.kwargs):
         self.fire(*args, **kwargs)
     
-    def __iadd__(self, func: Callable[P, None]) -> Self:
-        self.subscribe(func)
+    def __iadd__(self, func: Callable[P, None] | None) -> Self:
+        if func:
+            self.subscribe(func)
         return self
     
     def __isub__(self, handler: EventHandler[P]) -> Self:

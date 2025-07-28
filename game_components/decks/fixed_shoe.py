@@ -1,8 +1,11 @@
 from collections.abc import Callable
-from typing import override
+from typing import TYPE_CHECKING, Any, override
 from .abc import Deck
-from card import Card
 import random
+if TYPE_CHECKING:
+    from card import Card
+else:
+    Card = Any
 
 
 '''

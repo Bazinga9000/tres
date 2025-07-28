@@ -1,5 +1,11 @@
 import abc
-from card import Card
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from card import Card
+else:
+    Card = Any
+
 
 class Deck(abc.ABC):
     """
