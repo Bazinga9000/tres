@@ -7,7 +7,7 @@ from views.argbuilder import ArgBuilder
 
 class WildNumber(Card):
     def __init__(self, c: CardColor):
-        super().__init__(c, 50, 0, "wild_number", False)
+        super().__init__(c, 40, 0, "wild_number", False)
 
     @property
     @override
