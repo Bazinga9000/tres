@@ -17,9 +17,7 @@ def make_test_deck() -> list[card.Card]:
         out.append(card.HandSwap(c))        # Hand Swap
         out.append(card.SeatSwap(c))        # Seat Swap
         out.append(card.HandRotate(c))      # Hand Rotate
-
-        for _ in range(10):
-            out.append(card.WildNumber(c))  # Wild Number
+        out.append(card.WildNumber(c))  # Wild Number
 
     # Cards with fixed colors
     for _ in range(2):
