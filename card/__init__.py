@@ -15,6 +15,9 @@ from card.cards.wild_number import WildNumber
 # Empty lambda to produce multiple copies of red 40
 Red40 = lambda: NumberCard(CardColor.RED, 40)
 
+# Dead Weight
+DeadWeight = lambda: Card(CardColor.ORANGE, -50, 0, "dead_weight", False)
+
 __all__ = [
     'Card',
     'NumberCard',
@@ -28,5 +31,6 @@ __all__ = [
     'HandSwap',
     'SeatSwap',
     'HandRotate',
-    'WildNumber'
+    'WildNumber',
+    'DeadWeight'
 ]

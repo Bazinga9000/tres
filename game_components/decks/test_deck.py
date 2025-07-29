@@ -25,6 +25,7 @@ def make_test_deck() -> list[card.Card]:
     for _ in range(5):
         out.append(card.WildCard())             # Wild Cards
     out.append(card.Red40())                    # Red 40
+    out.append(card.DeadWeight())               # Dead Weight
 
     return out
 
