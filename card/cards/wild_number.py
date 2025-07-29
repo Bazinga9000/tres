@@ -12,7 +12,7 @@ class WildNumber(Card):
     @property
     @override
     def args(self):
-        return ArgBuilder().add_number(min=0, max=15).with_callback(self.on_play)
+        return ArgBuilder[Game]().add_number(min=0, max=15).with_callback(self.on_play)
 
     def on_play(self, game: Game, n: int):
         # todo: other cards might now treat this identically to its given number

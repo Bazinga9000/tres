@@ -33,9 +33,6 @@ class CardView(View):
                 await self.game.channel.send(f'{self.game.active_player.display_name} paid the card debt ({self.game.card_debt})!')
                 self.game.card_debt = 0
                 await self.end_turn_and_die(interaction)
-        
-        
-        
         self.draw_button.callback   = draw_callback
         
         self.pass_button = Button[CardView](label='Pass turn', style=ButtonStyle.blurple, disabled=True)
@@ -43,7 +40,6 @@ class CardView(View):
             player = self.game.players[self.game.whose_turn]
             await self.game.channel.send(f'{player.display_name} passed their turn!')
             await self.end_turn_and_die(interaction)
-        
         self.pass_button.callback = pass_callback
         
         self.play_button = Button[CardView](label='Play selected card', style=ButtonStyle.success, disabled=True)

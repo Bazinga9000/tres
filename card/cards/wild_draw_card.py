@@ -16,7 +16,7 @@ class WildDrawCard(Card):
     @property
     @override
     def args(self):
-        return ArgBuilder().add_color().with_callback(self.on_play)
+        return ArgBuilder[Game]().add_color().with_callback(self.on_play)
     
     def on_play(self, game: Game, color: CardColor):
         self.color = color

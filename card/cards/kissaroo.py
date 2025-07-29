@@ -21,7 +21,7 @@ class Kissaroo(Card):
     @property
     @override
     def args(self):
-        return ArgBuilder().add_card(requires_playable=False).add_player(skip_self=True).with_callback(self.on_play)
+        return ArgBuilder[Game]().add_card(requires_playable=False).add_player(skip_self=True).with_callback(self.on_play)
 
     def on_play(self, game: Game, card: Card, target: Player):
         game.active_player.hand.remove_card(card)

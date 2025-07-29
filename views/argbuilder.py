@@ -16,33 +16,34 @@ if TYPE_CHECKING:
 else:
     Game = Card = Any
 
-type SelectFactory[T] = Callable[[Game], TypedSelect[T]]
-type Self[*T] = ArgBuilder[*T]
+type SelectFactory[S, T] = Callable[[S], TypedSelect[T]]
+type Self[S, *Ts] = ArgBuilder[S, *Ts]
 
 
-class ArgBuilderBase(ABC):
+class ArgBuilderBase[T](ABC):
     @abstractmethod
-    def compile(self, game: Game, view: View) -> Callable[[], object]:
+    def compile(self, arg: T, view: View) -> Callable[[], object]:
         '''Compiles the argument list into a set of select options on the view and produces a callback.'''
 
 
-class ArgBuilder[*Ts](ArgBuilderBase):
+class ArgBuilder[S, *Ts](ArgBuilderBase[S]):
     @overload
-    def __init__(self: Self[()]) -> None:
+    def __init__[SI](self: Self[SI]) -> None:
         ...
 
     @overload
-    def __init__[*H, T](self: Self[*H, T], data: tuple[Self[*H], SelectFactory[T]]) -> None:
+    def __init__[SI, *H, T](self: Self[SI, *H, T], data: tuple[Self[S, *H], SelectFactory[S, T]]) -> None:
         ...
 
-    def __init__[*H, T](self, data: tuple[Self[*H], SelectFactory[T]] | None = None):
+    def __init__[*H, T](self, data: tuple[Self[S, *H], SelectFactory[S, T]] | None = None):
         self.data = data
-        self.callback = Event[Game, tuple[*Ts]]()
+        self.callback = Event[S, tuple[*Ts]]()
 
-    def add[T](self, select: SelectFactory[T]) -> Self[*Ts, T]:
+    def add[T](self, select: SelectFactory[S, T]) -> Self[S, *Ts, T]:
         return ArgBuilder((self, select))
-
-    def add_player(self, placeholder: str = 'Select a player.', *, skip_self: bool):
+    
+    # TODO: probably want to separate these out to prevent the reliance on Game
+    def add_player(self: Self[Game, *Ts], placeholder: str = 'Select a player.', *, skip_self: bool):
         def factory(game: Game):
             def converter(value: str):
                 player = game.find_player_id(int(value))
@@ -60,8 +61,7 @@ class ArgBuilder[*Ts](ArgBuilderBase):
 
         return self.add(factory)
 
-
-    def add_card(self, placeholder: str = 'Select a card.', *, requires_playable: bool):
+    def add_card(self: Self[Game, *Ts], placeholder: str = 'Select a card.', *, requires_playable: bool):
         def factory(game: Game):
             def converter(value: str):
                 card = game.active_player.hand.lookup_card(UUID(value))
@@ -80,7 +80,7 @@ class ArgBuilder[*Ts](ArgBuilderBase):
             return select
         return self.add(factory)
 
-    def add_color(self, placeholder: str = 'Select a color.'):
+    def add_color(self: Self[Game, *Ts], placeholder: str = 'Select a color.'):
         def factory(game: Game):
             def converter(value: str):
                 return CardColor(int(value))
@@ -93,7 +93,7 @@ class ArgBuilder[*Ts](ArgBuilderBase):
             return select
         return self.add(factory)
 
-    def add_pile(self, placeholder: str = 'Select a pile.', *, playable_by: Card | None = None):
+    def add_pile(self: Self[Game, *Ts], placeholder: str = 'Select a pile.', *, playable_by: Card | None = None):
         def factory(game: Game):
             def converter(value: str):
                 pile = int(value)
@@ -110,7 +110,7 @@ class ArgBuilder[*Ts](ArgBuilderBase):
             return select
         return self.add(factory)
 
-    def add_number(self, placeholder: str='Select a number.', *, min: int, max: int):
+    def add_number(self: Self[Game, *Ts], placeholder: str='Select a number.', *, min: int, max: int):
         def factory(game: Game):
             def converter(value: str):
                 n = int(value)
@@ -127,26 +127,26 @@ class ArgBuilder[*Ts](ArgBuilderBase):
             return select
         return self.add(factory)
 
-    def with_callback(self, func: Callable[[Game, *Ts], None]):
-        self.callback.subscribe(lambda game, args: func(game, *args))
+    def with_callback(self, func: Callable[[S, *Ts], None]):
+        self.callback.subscribe(lambda arg, args: func(arg, *args))
         return self
 
     @override
-    def compile(self, game: Game, view: View) -> Callable[[], tuple[*Ts]]:
+    def compile(self, arg: S, view: View) -> Callable[[], tuple[*Ts]]:
         '''Compiles the argument list into a set of select options on the view and produces an interaction callback.'''
 
         if self.data:
             head, factory = self.data
-            get_head_values = head.compile(game, view)
+            get_head_values = head.compile(arg, view)
 
             # SIDE EFFECTS: add select to view
-            select = factory(game)
+            select = factory(arg)
             view.add_item(select)
 
             def get_values() -> tuple[*Ts]:
                 values: tuple[*Ts] # necessary evil because pyright won't admit (*H, T) = *Ts
                 values = (*get_head_values(), select.get_value()) # type: ignore
-                self.callback(game, values)
+                self.callback(arg, values)
                 return values
             return get_values
         return lambda: () # type: ignore

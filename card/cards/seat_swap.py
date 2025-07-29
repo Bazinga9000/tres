@@ -13,7 +13,7 @@ class SeatSwap(Card):
     @property
     @override
     def args(self):
-        return ArgBuilder().add_player(skip_self=True).with_callback(self.on_play)
+        return ArgBuilder[Game]().add_player(skip_self=True).with_callback(self.on_play)
 
     def on_play(self, game: Game, player: Player):
         my_seat = game.whose_turn

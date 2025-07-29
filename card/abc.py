@@ -40,7 +40,7 @@ class Card(abc.ABC):
         self.display_name = f"{self.color_name()} {self.card_type}".replace("_"," ").title()
     
     @property
-    def args(self) -> ArgBuilderBase:
+    def args(self) -> ArgBuilderBase[Game]:
         '''Returns the arguments for this card.'''
         
         return ArgBuilder()
