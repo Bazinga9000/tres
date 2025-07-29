@@ -71,6 +71,7 @@ class ArgBuilder[*Ts](ArgBuilderBase):
 
             select = TypedSelect(converter)
             select.placeholder = placeholder
+            # todo: you shouldn't be able to choose the same card you're playing
             select.options = [
                 SelectOption(label=card.display_name, value=str(card.uuid))
                 for card in game.active_player.hand
