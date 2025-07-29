@@ -30,18 +30,18 @@ class ArgBuilder[*Ts](ArgBuilderBase):
     @overload
     def __init__(self: Self[()]) -> None:
         ...
-    
+
     @overload
     def __init__[*H, T](self: Self[*H, T], data: tuple[Self[*H], SelectFactory[T]]) -> None:
         ...
-    
+
     def __init__[*H, T](self, data: tuple[Self[*H], SelectFactory[T]] | None = None):
         self.data = data
         self.callback = Event[Game, tuple[*Ts]]()
-    
+
     def add[T](self, select: SelectFactory[T]) -> Self[*Ts, T]:
         return ArgBuilder((self, select))
-    
+
     def add_player(self, placeholder: str = 'Select a player.', *, skip_self: bool):
         def factory(game: Game):
             def converter(value: str):
@@ -57,10 +57,10 @@ class ArgBuilder[*Ts](ArgBuilderBase):
                 if player != game.active_player or not skip_self
             ]
             return select
-        
+
         return self.add(factory)
-        
-    
+
+
     def add_card(self, placeholder: str = 'Select a card.', *, requires_playable: bool):
         def factory(game: Game):
             def converter(value: str):
@@ -68,7 +68,7 @@ class ArgBuilder[*Ts](ArgBuilderBase):
                 if not card:
                     raise ValueError("Selected card index out of range.")
                 return card
-            
+
             select = TypedSelect(converter)
             select.placeholder = placeholder
             select.options = [
@@ -78,7 +78,7 @@ class ArgBuilder[*Ts](ArgBuilderBase):
             ]
             return select
         return self.add(factory)
-    
+
     def add_color(self, placeholder: str = 'Select a color.'):
         def factory(game: Game):
             def converter(value: str):
@@ -91,7 +91,7 @@ class ArgBuilder[*Ts](ArgBuilderBase):
             ]
             return select
         return self.add(factory)
-    
+
     def add_pile(self, placeholder: str = 'Select a pile.', *, playable_by: Card | None = None):
         def factory(game: Game):
             def converter(value: str):
@@ -108,23 +108,40 @@ class ArgBuilder[*Ts](ArgBuilderBase):
             ]
             return select
         return self.add(factory)
-    
+
+    def add_number(self, placeholder: str='Select a number.', *, min: int, max: int):
+        def factory(game: Game):
+            def converter(value: str):
+                n = int(value)
+                if not min <= n <= max:
+                    raise ValueError("Out of bounds number given")
+                return n
+
+            select = TypedSelect(converter)
+            select.placeholder = placeholder
+            select.options = [
+                SelectOption(label=str(n), value=str(n))
+                for n in range(min, max+1)
+            ]
+            return select
+        return self.add(factory)
+
     def with_callback(self, func: Callable[[Game, *Ts], None]):
         self.callback.subscribe(lambda game, args: func(game, *args))
         return self
-    
+
     @override
     def compile(self, game: Game, view: View) -> Callable[[], tuple[*Ts]]:
         '''Compiles the argument list into a set of select options on the view and produces an interaction callback.'''
-        
+
         if self.data:
             head, factory = self.data
             get_head_values = head.compile(game, view)
-            
+
             # SIDE EFFECTS: add select to view
             select = factory(game)
             view.add_item(select)
-            
+
             def get_values() -> tuple[*Ts]:
                 values: tuple[*Ts] # necessary evil because pyright won't admit (*H, T) = *Ts
                 values = (*get_head_values(), select.get_value()) # type: ignore

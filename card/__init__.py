@@ -10,6 +10,7 @@ from card.cards.wild_draw_card import WildDrawCard
 from card.cards.hand_swap import HandSwap
 from card.cards.seat_swap import SeatSwap
 from card.cards.hand_rotate import HandRotate
+from card.cards.wild_number import WildNumber
 
 # Empty lambda to produce multiple copies of red 40
 Red40 = lambda: NumberCard(CardColor.RED, 40)
@@ -26,5 +27,6 @@ __all__ = [
     'Red40',
     'HandSwap',
     'SeatSwap',
-    'HandRotate'
+    'HandRotate',
+    'WildNumber'
 ]

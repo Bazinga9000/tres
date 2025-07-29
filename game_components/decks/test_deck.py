@@ -5,7 +5,7 @@ def make_test_deck() -> list[card.Card]:
     out: list[card.Card] = []
 
     for c in [card.CardColor.RED, card.CardColor.ORANGE, card.CardColor.YELLOW, card.CardColor.GREEN, card.CardColor.BLUE, card.CardColor.PURPLE]:
-        for n in range(1,16):
+        for n in range(0,16):
             out.append(card.NumberCard(c,n))
         for _ in range(2):
             out.append(card.DrawCard(c, 2))     # Draw 2s
@@ -15,6 +15,9 @@ def make_test_deck() -> list[card.Card]:
         out.append(card.HandSwap(c))        # Hand Swap
         out.append(card.SeatSwap(c))        # Seat Swap
         out.append(card.HandRotate(c))      # Hand Rotate
+
+        for _ in range(10):
+            out.append(card.WildNumber(c))  # Wild Number
 
     # Cards with fixed colors
     for _ in range(2):
