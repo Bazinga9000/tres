@@ -7,6 +7,8 @@ from pregame import PreGame
 from game_components import Player
 from views.cardview import CardView
 import game_components.decks as decks
+import util.image_util
+import io
 
 class Game:
     def __init__(self, pregame: PreGame):
@@ -62,7 +64,12 @@ class Game:
 
         e.add_field(name="Top Card", value=self.piles[0][-1].display_name)
 
-        await self.channel.send(embed = e, view = TurnStarterView(self))
+        hand_image = util.image_util.image_row([c.image() for c in self.active_player.hand])
+
+        with io.BytesIO() as hand_image_binary:
+            hand_image.save(hand_image_binary, "PNG")
+            hand_image_binary.seek(0)
+            await self.channel.send(embed = e, view = TurnStarterView(self), file=discord.File(fp=hand_image_binary, filename="hand.png"))
 
 
     # Performs cleanup at the end of a turn and then starts the next turn if needed

@@ -1,10 +1,13 @@
 import abc
 from typing import TYPE_CHECKING, Any
 import uuid
+import os.path
+import util.image_util
 
 
 from card.color import CardColor
 from views.argbuilder import ArgBuilder, ArgBuilderBase
+from PIL import Image
 
 
 # TODO: this solves circular dependency, but it's probably better to just refactor so that the type doesn't exist in the first place -cap
@@ -38,13 +41,13 @@ class Card(abc.ABC):
         # The display name of the card. Used to textually represent a card.
         # This defualt value should be overridden if the card has a special naming scheme (e.g is in only one color)
         self.display_name = f"{self.color_name()} {self.card_type}".replace("_"," ").title()
-    
+
     @property
     def args(self) -> ArgBuilderBase[Game]:
         '''Returns the arguments for this card.'''
-        
+
         return ArgBuilder()
-    
+
     # Gets the color name of this card, used to
     def color_name(self):
 
@@ -75,3 +78,30 @@ class Card(abc.ABC):
     # Called *after* the card is put into the hand
     def on_draw(self, game: Game, player: Player):
         pass
+
+    def image(self) -> Image.Image:
+        assets_location = "assets"
+        backs_location = f"{assets_location}/card_backs"
+
+        match self.color:
+            case CardColor.RED:
+                card_back = f"{backs_location}/red.png"
+            case CardColor.ORANGE:
+                card_back = f"{backs_location}/orange.png"
+            case CardColor.YELLOW:
+                card_back = f"{backs_location}/yellow.png"
+            case CardColor.GREEN:
+                card_back = f"{backs_location}/green.png"
+            case CardColor.BLUE:
+                card_back = f"{backs_location}/blue.png"
+            case CardColor.PURPLE:
+                card_back = f"{backs_location}/purple.png"
+            case _:
+                card_back = f"{backs_location}/wild.png"
+
+        symbols_location = f"{assets_location}/symbols"
+        symbol = f"{symbols_location}/{self.card_type}.png"
+        if not os.path.isfile(symbol):
+            symbol = f"{symbols_location}/placeholder.png"
+
+        return util.image_util.compose_files([card_back, symbol])
