@@ -10,7 +10,6 @@ def compose_files(files: list[str]) -> Image.Image:
     '''
     assert files != []
     out = open_rgba(files[0])
-    print(out.mode)
 
     for f in files[1:]:
         foreground = open_rgba(f)
