@@ -1,5 +1,6 @@
 import uuid
 from typing import TYPE_CHECKING, Any
+from PIL import Image
 
 # yet another circular dependency
 if TYPE_CHECKING:
@@ -27,9 +28,15 @@ class Hand:
     def remove_card(self, c: Card):
         self.cards.remove(c)
 
-    # todo: sort on display
+    def sorted(self) -> list[Card]:
+        out : list[Card] = self.cards[:]
+        return sorted(out, key=lambda x: x.sort_key())
+
     def display_all_cards(self) -> str:
-        return "\n".join(i.display_name for i in self.cards)
+        return "\n".join(i.display_name for i in self.sorted())
+
+    def render_all_cards(self) -> list[Image.Image]:
+        return [i.render() for i in self.sorted()]
 
     def __iter__(self):
         return self.cards.__iter__()

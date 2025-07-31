@@ -79,7 +79,7 @@ class Card(abc.ABC):
     def on_draw(self, game: Game, player: Player):
         pass
 
-    def image(self) -> Image.Image:
+    def render(self) -> Image.Image:
         assets_location = "assets"
         backs_location = f"{assets_location}/card_backs"
 
@@ -105,3 +105,43 @@ class Card(abc.ABC):
             symbol = f"{symbols_location}/placeholder.png"
 
         return util.image_util.compose_files([card_back, symbol])
+
+    def sort_key(self) -> list[int]:
+        key : list[int] = []
+
+        # first, sort by color
+        match self.color:
+            # Monocolored cards always go first
+            case CardColor.RED:
+                key.append(1)
+            case CardColor.ORANGE:
+                key.append(2)
+            case CardColor.YELLOW:
+                key.append(3)
+            case CardColor.GREEN:
+                key.append(4)
+            case CardColor.BLUE:
+                key.append(5)
+            case CardColor.PURPLE:
+                key.append(6)
+            case c:
+                # todo: more intelligent sorting of non-rainbow multicolored cards
+                # this will, at least, put rainbow (all colors) last
+                key.append(c.value + 7)
+
+        # within each color, number cards are always first
+        try:
+            key.extend([0, int(self.card_type)])
+        except:
+            # card type isn't a bare integer
+            key.append(1)
+            # todo: change this later, i guess?
+            # sort by penalty points, highest last
+            key.append(self.penalty_points)
+            # if penalty points are the same, give up and just use the hash
+            key.append(hash(self.card_type))
+
+        # always break ties by the uuid
+        key.append(int(self.uuid))
+
+        return key

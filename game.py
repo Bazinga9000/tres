@@ -64,7 +64,7 @@ class Game:
 
         e.add_field(name="Top Card", value=self.piles[0][-1].display_name)
 
-        hand_image = util.image_util.image_row([c.image() for c in self.active_player.hand])
+        hand_image = util.image_util.image_row(self.active_player.hand.render_all_cards())
 
         with io.BytesIO() as hand_image_binary:
             hand_image.save(hand_image_binary, "PNG")
