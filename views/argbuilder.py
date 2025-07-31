@@ -149,4 +149,11 @@ class ArgBuilder[S, *Ts](ArgBuilderBase[S]):
                 self.callback(arg, values)
                 return values
             return get_values
-        return lambda: () # type: ignore
+
+        def nullary_values() -> tuple[*Ts]:
+            values : tuple[*Ts]
+            values = () # type: ignore
+            self.callback(arg, values)
+            return values
+
+        return nullary_values
