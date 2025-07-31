@@ -39,6 +39,9 @@ class Game:
         # Card Debt = cards that must be drawn by the next player in lieu of taking a turn
         self.card_debt = 0
 
+        # todo: hook this into the argbuilder
+        self.active_pile = -1
+
     @property
     def active_player(self):
         return self.players[self.whose_turn]

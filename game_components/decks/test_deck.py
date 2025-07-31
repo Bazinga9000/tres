@@ -19,6 +19,8 @@ def make_test_deck() -> list[card.Card]:
         out.append(card.HandRotate(c))      # Hand Rotate
         out.append(card.WildNumber(c))  # Wild Number
         out.append(card.Kissaroo(c))    # Kissaroo
+        out.append(card.MetaDraw(c))    # Metadraw
+        out.append(card.PileShuffle(c)) # Pile Shuffle
 
     # Cards with fixed colors
     for _ in range(2):

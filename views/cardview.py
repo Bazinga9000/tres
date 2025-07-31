@@ -101,6 +101,8 @@ class CardView(View):
                 player.hand.remove_card(card)
                 self.game.piles[pile].append(card)
 
+                #todo: hook this into the argbuilder later
+                self.game.active_pile = pile
                 on_play()
                 await self.end_turn_and_die(interaction)
 
