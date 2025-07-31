@@ -41,7 +41,7 @@ class ArgBuilder[S, *Ts](ArgBuilderBase[S]):
 
     def add[T](self, select: SelectFactory[S, T]) -> Self[S, *Ts, T]:
         return ArgBuilder((self, select))
-    
+
     # TODO: probably want to separate these out to prevent the reliance on Game
     def add_player(self: Self[Game, *Ts], placeholder: str = 'Select a player.', *, skip_self: bool):
         def factory(game: Game):
@@ -74,7 +74,7 @@ class ArgBuilder[S, *Ts](ArgBuilderBase[S]):
             # todo: you shouldn't be able to choose the same card you're playing
             select.options = [
                 SelectOption(label=card.display_name, value=str(card.uuid))
-                for card in game.active_player.hand
+                for card in game.active_player.hand.sorted()
                 if card.playable_piles(game) or not requires_playable
             ]
             return select
