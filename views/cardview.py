@@ -37,7 +37,7 @@ class CardView(View):
 
         self.pass_button = Button[CardView](label='Pass turn', style=ButtonStyle.blurple, disabled=True)
         async def pass_callback(interaction: Interaction):
-            player = self.game.players[self.game.whose_turn]
+            player = self.game.active_player
             await self.game.channel.send(f'{player.display_name} passed their turn!')
             await self.end_turn_and_die(interaction)
         self.pass_button.callback = pass_callback
@@ -94,7 +94,7 @@ class CardView(View):
             on_play = card.args.compile(self.game, self)
 
             async def play_callback(interaction: Interaction):
-                player = self.game.players[self.game.whose_turn]
+                player = self.game.active_player
                 card = card_select.get_value()
                 pile = pile_select.get_value()
 
