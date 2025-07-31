@@ -67,6 +67,8 @@ class Game:
 
         e.add_field(name="Top Card", value=self.piles[0][-1].display_name)
 
+        e.add_field(name="Card Debt", value=str(self.card_debt))
+
         hand_image = util.image_util.image_row(self.active_player.hand.render_all_cards())
 
         with io.BytesIO() as hand_image_binary:
