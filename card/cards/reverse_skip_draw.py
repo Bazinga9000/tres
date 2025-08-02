@@ -28,7 +28,7 @@ class ReverseSkipDraw(Card):
             card_types.append(f"draw_{self.d}")
             card_name.append(f"Draw {self.d}")
 
-        super().__init__(color, 30, 0, "_".join(card_types), True)
+        super().__init__(color, 30, 0, "_".join(card_types), (self.d > 0))
         self.display_name = f"{self.color_name()} {' '.join(card_name)}"
 
     @property
