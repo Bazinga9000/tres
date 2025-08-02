@@ -148,4 +148,4 @@ class CardView(View):
         '''
         Edits the message with an updated view and hand image.
         '''
-        await interaction.response.edit_message(view=self, file=self.game.active_player.hand.render_discord())
+        await interaction.response.edit_message(view=self, files=[self.game.active_player.hand.render_discord()])
