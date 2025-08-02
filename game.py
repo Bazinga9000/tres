@@ -72,7 +72,7 @@ class Game:
         await self.channel.send(
             embed = e,
             view = TurnStarterView(self),
-            file=util.image_util.as_discord_file(game_state_image, "game_state.png"))
+            files=[util.image_util.as_discord_file(game_state_image, "game_state.png")])
 
 
 
@@ -196,7 +196,7 @@ class TurnStarterView(TurnTrackingView):
         await interaction.respond(
             view=CardView(self.game),
             ephemeral=True,
-            file=self.game.active_player.hand.render_discord()
+            files=[self.game.active_player.hand.render_discord()]
         )
         return
 
