@@ -7,13 +7,17 @@ def make_test_deck() -> list[card.Card]:
     for c in [card.CardColor.RED, card.CardColor.ORANGE, card.CardColor.YELLOW, card.CardColor.GREEN, card.CardColor.BLUE, card.CardColor.PURPLE]:
         for n in range(0,16):
             out.append(card.NumberCard(c,n))
+        for _ in range(3):
+            out.append(card.ReverseSkipDraw(c, draw=2))               # Draw 2s
+            out.append(card.ReverseSkipDraw(c, reverse=True))         # Reverse
+            out.append(card.ReverseSkipDraw(c, skip=1))               # Single Skip
+            out.append(card.ReverseSkipDraw(c, reverse=True, skip=1)) # Reverse Skip
         for _ in range(2):
-            out.append(card.DrawCard(c, 2))     # Draw 2s
-            out.append(card.ReverseCard(c))     # Reverse
-            out.append(card.SkipCard(c))        # Single Skip
-            out.append(card.ReverseSkipCard(c)) # Reverse Skip
-        out.append(card.DrawCard(c, 4))     # Draw 4
-        out.append(card.SkipCard(c, 2))     # Double Skip
+            out.append(card.ReverseSkipDraw(c, draw=4))                       # Draw 4
+            out.append(card.ReverseSkipDraw(c, skip=2))                       # Double Skip
+            out.append(card.ReverseSkipDraw(c, reverse=True, draw=2))         # Reverse Draw 2
+            out.append(card.ReverseSkipDraw(c, skip=1, draw=2))               # Skip Draw 2
+            out.append(card.ReverseSkipDraw(c, reverse=True, skip=1, draw=2)) # Reverse Skip Draw 2
         out.append(card.HandSwap(c))        # Hand Swap
         out.append(card.SeatSwap(c))        # Seat Swap
         out.append(card.HandRotate(c))      # Hand Rotate
