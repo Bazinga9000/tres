@@ -16,39 +16,52 @@ def compose_files(files: list[str]) -> Image.Image:
         out.paste(foreground, (0,0), foreground)
     return out
 
-def image_row(images: list[Image.Image]) -> Image.Image:
+def image_row(images: list[Image.Image], offset: int = 0, center: bool = False) -> Image.Image:
     '''
-    Given a set of images, create a single image where the composite images are placed left to right
+    Given a set of images, create a single image where the composite images are placed left to right.
+
+    If offset is set, overlay each image on top of the previous one with an overlap of that much.
+    If center is set, images will be aligned to the center
     '''
     assert images != []
 
-    total_width = sum([i.width for i in images])
+    total_width = sum([i.width for i in images]) - (offset * len(images))
     max_height = max([i.height for i in images])
 
     out = Image.new("RGBA", (total_width, max_height))
     accum = 0
 
     for im in images:
-        out.paste(im, (accum, 0))
+        if center:
+            y = (max_height - im.height)//2
+        else:
+            y = 0
+        out.paste(im, (accum, y))
         accum += im.width
+        accum -= offset
 
     return out
 
 
-def image_column(images: list[Image.Image]) -> Image.Image:
+def image_column(images: list[Image.Image], offset: int = 0, center: bool = False) -> Image.Image:
     '''
-    Given a set of images, create a single image where the composite images are placed top to bottom
+    As image_row, but lays the images top to bottom.
     '''
     assert images != []
 
     max_width = max([i.width for i in images])
-    total_height = sum([i.height for i in images])
+    total_height = sum([i.height for i in images]) - (offset * len(images))
 
     out = Image.new("RGBA", (max_width, total_height))
     accum = 0
 
     for im in images:
-        out.paste(im, (0, accum))
+        if center:
+            x = (max_width - im.width)//2
+        else:
+            x = 0
+        out.paste(im, (x, accum))
         accum += im.height
+        accum -= offset
 
     return out

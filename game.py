@@ -9,6 +9,7 @@ from views.cardview import CardView
 import game_components.decks as decks
 import util.image_util
 import io
+from PIL import Image
 
 class Game:
     def __init__(self, pregame: PreGame):
@@ -69,12 +70,15 @@ class Game:
 
         e.add_field(name="Card Debt", value=str(self.card_debt))
 
-        hand_image = util.image_util.image_row(self.active_player.hand.render_all_cards())
+        game_state_image = await self.render()
 
-        with io.BytesIO() as hand_image_binary:
-            hand_image.save(hand_image_binary, "PNG")
-            hand_image_binary.seek(0)
-            await self.channel.send(embed = e, view = TurnStarterView(self), file=discord.File(fp=hand_image_binary, filename="hand.png"))
+
+        with io.BytesIO() as game_state_binary:
+            game_state_image.save(game_state_binary, "PNG")
+            game_state_binary.seek(0)
+            await self.channel.send(embed = e, view = TurnStarterView(self), file=discord.File(fp=game_state_binary, filename="gamestate.png"))
+
+
 
 
     # Performs cleanup at the end of a turn and then starts the next turn if needed
@@ -110,6 +114,34 @@ class Game:
                 return p
 
         return None
+
+    async def render(self) -> Image.Image:
+        '''
+        Renders the current game state as an image.
+
+        This is async because it gets player asset data.
+        '''
+
+        player_images : list[Image.Image] = []
+
+        for p in self.players:
+            p_img : list[Image.Image] = []
+            avatar_asset = p.discord_user.avatar
+            assert avatar_asset is not None
+            avatar_bytes = await avatar_asset.read()
+            avatar_image = Image.open(io.BytesIO(avatar_bytes))
+            p_img.append(avatar_image.resize((160, 160))) # type: ignore (PIL didn't type resize well)
+
+            if p != self.active_player:
+                card_face_down = util.image_util.open_rgba("assets/card_backs/face_down.png")
+                for _ in range(len(p.hand)):
+                    p_img.append(card_face_down)
+            else:
+                p_img.extend(p.hand.render_all_cards())
+            player_images.append(util.image_util.image_row(p_img, 0, True))
+
+        return util.image_util.image_column(player_images)
+
 
 # A view that can keep track of the game's turns, and disable callbacks if they're out of turn
 class TurnTrackingView(discord.ui.View):
