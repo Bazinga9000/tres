@@ -104,7 +104,7 @@ class Game:
             player.hand.add_card(c)
             c.on_draw(self, player)
 
-    def find_player_id(self, player_id: int):
+    def find_player_id(self, player_id: int) -> Player | None:
         for p in self.players:
             if p.id == player_id:
                 return p
@@ -181,6 +181,9 @@ class TurnStarterView(TurnTrackingView):
         turn_button.callback = self.empty_out_of_turn(self.turn_callback)
         self.add_item(turn_button)
 
+        inspect_hand_button: discord.ui.Button[TurnTrackingView] = discord.ui.Button(label="Inspect Hand", row=1, style=discord.ButtonStyle.grey)
+        inspect_hand_button.callback = self.hand_inspector_callback
+        self.add_item(inspect_hand_button)
 
     async def turn_callback(self, interaction: discord.Interaction):
         if interaction.user is None:
@@ -196,3 +199,24 @@ class TurnStarterView(TurnTrackingView):
             file=self.game.active_player.hand.render_discord()
         )
         return
+
+    async def hand_inspector_callback(self, interaction: discord.Interaction):
+        if interaction.user is None:
+            await interaction.respond("Who am I talking to? Am I just a ghost in the machine?")
+            return
+
+        p = self.game.find_player_id(interaction.user.id)
+
+        if p is None:
+            await interaction.respond("You aren't in the game!", ephemeral=True)
+            return
+
+        e = discord.Embed(
+            title=f"{p.display_name}'s Hand",
+            description=f"You have {len(p.hand)} card(s) in hand.",
+            color=discord.Colour.blurple(),
+        )
+
+        e.add_field(name="Cards in your hand:", value=p.hand.display_all_cards())
+
+        await interaction.respond(embed=e, ephemeral=True, file=p.hand.render_discord())
