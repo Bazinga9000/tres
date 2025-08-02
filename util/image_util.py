@@ -1,4 +1,6 @@
 from PIL import Image
+import discord
+import io
 
 def open_rgba(file: str) -> Image.Image:
     out = Image.open(file)
@@ -65,3 +67,14 @@ def image_column(images: list[Image.Image], offset: int = 0, center: bool = Fals
         accum -= offset
 
     return out
+
+def as_discord_file(im: Image.Image, filename: str) -> discord.File:
+    '''
+    Convert an image into a discord File.
+    '''
+    with io.BytesIO() as binary:
+        im.save(binary, "PNG")
+        binary.seek(0)
+        file = discord.File(fp=binary, filename="gamestate.png")
+
+    return file

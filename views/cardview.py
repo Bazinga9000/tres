@@ -27,7 +27,7 @@ class CardView(View):
                 self.remove_item(self.card_select)
                 self.update_card_select(selected=self.card_select.values)
                 await self.game.channel.send(f'{self.game.active_player.display_name} drew a card!')
-                await interaction.response.edit_message(view=self)
+                await self.update_interaction_message(interaction)
             else:
                 self.game.draw_card(self.game.active_player, n=self.game.card_debt)
                 await self.game.channel.send(f'{self.game.active_player.display_name} paid the card debt ({self.game.card_debt})!')
@@ -112,7 +112,7 @@ class CardView(View):
                 option.default = option.value in card_select.values
 
             self.play_button.disabled = bool(self.unset)
-            await interaction.response.edit_message(view=self)
+            await self.update_interaction_message(interaction)
         card_select.callback = card_callback
 
         if len(card_select.options) > 0:
@@ -143,3 +143,9 @@ class CardView(View):
         await self.game.end_turn()
         await interaction.response.defer()
         await interaction.delete_original_response()
+
+    async def update_interaction_message(self, interaction: Interaction):
+        '''
+        Edits the message with an updated view and hand image.
+        '''
+        await interaction.response.edit_message(view=self, file=self.game.active_player.hand.render_discord())

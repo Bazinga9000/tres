@@ -71,12 +71,10 @@ class Game:
         e.add_field(name="Card Debt", value=str(self.card_debt))
 
         game_state_image = await self.render()
-
-
-        with io.BytesIO() as game_state_binary:
-            game_state_image.save(game_state_binary, "PNG")
-            game_state_binary.seek(0)
-            await self.channel.send(embed = e, view = TurnStarterView(self), file=discord.File(fp=game_state_binary, filename="gamestate.png"))
+        await self.channel.send(
+            embed = e,
+            view = TurnStarterView(self),
+            file=util.image_util.as_discord_file(game_state_image, "game_state.png"))
 
 
 
@@ -132,12 +130,10 @@ class Game:
             avatar_image = Image.open(io.BytesIO(avatar_bytes))
             p_img.append(avatar_image.resize((160, 160))) # type: ignore (PIL didn't type resize well)
 
-            if p != self.active_player:
-                card_face_down = util.image_util.open_rgba("assets/card_backs/face_down.png")
-                for _ in range(len(p.hand)):
-                    p_img.append(card_face_down)
-            else:
-                p_img.extend(p.hand.render_all_cards())
+            card_face_down = util.image_util.open_rgba("assets/card_backs/face_down.png")
+            for _ in range(len(p.hand)):
+                p_img.append(card_face_down)
+
             player_images.append(util.image_util.image_row(p_img, 0, True))
 
         return util.image_util.image_column(player_images)
@@ -196,5 +192,9 @@ class TurnStarterView(TurnTrackingView):
             await interaction.respond("It's not your turn!", ephemeral=True)
             return
 
-        await interaction.respond(view=CardView(self.game), ephemeral=True)
+        await interaction.respond(
+            view=CardView(self.game),
+            ephemeral=True,
+            file=self.game.active_player.hand.render_discord()
+        )
         return
