@@ -64,8 +64,6 @@ class Game:
         turn_order = " > ".join(f"**{u.display_name}**" if i == self.whose_turn else u.display_name for (i,u) in enumerate(self.players))
         e.add_field(name="Turn Order", value=turn_order)
 
-        e.add_field(name="Your Hand", value=self.active_player.hand.display_all_cards())
-
         e.add_field(name="Top Card", value=self.piles[0][-1].display_name)
 
         e.add_field(name="Card Debt", value=str(self.card_debt))
