@@ -5,8 +5,9 @@ def make_test_deck() -> list[card.Card]:
     out: list[card.Card] = []
 
     for c in [card.CardColor.RED, card.CardColor.ORANGE, card.CardColor.YELLOW, card.CardColor.GREEN, card.CardColor.BLUE, card.CardColor.PURPLE]:
-        for n in range(0,16):
-            out.append(card.NumberCard(c,n))
+        for _ in range(4):
+            for n in range(0,16):
+                out.append(card.NumberCard(c,n))
         for _ in range(3):
             out.append(card.ReverseSkipDraw(c, draw=2))               # Draw 2s
             out.append(card.ReverseSkipDraw(c, reverse=True))         # Reverse
