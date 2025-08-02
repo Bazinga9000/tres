@@ -9,7 +9,7 @@ import util.number_names
 class ReverseSkipDraw(Card):
     def __init__(self, color: CardColor, *, reverse: bool=False, draw: int=0, skip: int=0):
         assert draw >= 0 and skip >= 0
-        assert reverse or draw > 1 or skip > 1
+        assert reverse or draw > 0 or skip > 0
         self.r = reverse
         self.s = skip
         self.d = draw
