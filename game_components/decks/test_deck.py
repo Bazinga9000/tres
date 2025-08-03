@@ -27,6 +27,7 @@ def make_test_deck() -> list[card.Card]:
         out.append(card.MetaDraw(c))    # Metadraw
         out.append(card.PileShuffle(c)) # Pile Shuffle
         out.append(card.DrawTimes(c, 2))# Draw 2x
+        out.append(card.Knight(c))      # Knight
 
     # Cards with fixed colors
     for _ in range(2):

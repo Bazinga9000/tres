@@ -12,6 +12,7 @@ from card.cards.kissaroo import Kissaroo
 from card.cards.metadraw import MetaDraw
 from card.cards.pile_shuffle import PileShuffle
 from card.cards.draw_times import DrawTimes
+from card.cards.knight import Knight
 
 # Empty lambda to produce multiple copies of red 40
 Red40 = lambda: NumberCard(CardColor.RED, 40)
@@ -34,5 +35,6 @@ __all__ = [
     'Kissaroo',
     'MetaDraw',
     'PileShuffle',
-    'DrawTimes'
+    'DrawTimes',
+    'Knight'
 ]
