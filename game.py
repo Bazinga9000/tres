@@ -126,9 +126,12 @@ class Game:
             avatar_image = Image.open(io.BytesIO(avatar_bytes))
             p_img.append(avatar_image.resize((160, 160))) # type: ignore (PIL didn't type resize well)
 
-            card_face_down = util.image_util.open_rgba("assets/card_backs/face_down.png")
-            for _ in range(len(p.hand)):
-                p_img.append(card_face_down)
+            if p.hand.is_public():
+                p_img.extend(p.hand.render_all_cards())
+            else:
+                card_face_down = util.image_util.open_rgba("assets/card_backs/face_down.png")
+                for _ in range(len(p.hand)):
+                    p_img.append(card_face_down)
 
             player_images.append(util.image_util.image_row(p_img, 0, True))
 

@@ -43,6 +43,12 @@ class Hand:
         '''
         return sum(i.penalty_points for i in self)
 
+    def is_public(self) -> bool:
+        '''
+        Based on the cards in this hand, should this hand be revealed?
+        '''
+        return any(i.card_type == "revelation" for i in self)
+
     def render_all_cards(self) -> list[Image.Image]:
         '''
         Gives a sorted list of renders of cards in hand.

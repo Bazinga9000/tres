@@ -19,6 +19,7 @@ def make_test_deck() -> list[card.Card]:
             out.append(card.ReverseSkipDraw(c, reverse=True, draw=2))         # Reverse Draw 2
             out.append(card.ReverseSkipDraw(c, skip=1, draw=2))               # Skip Draw 2
             out.append(card.ReverseSkipDraw(c, reverse=True, skip=1, draw=2)) # Reverse Skip Draw 2
+            out.append(card.Revelation(c))                                    # Revelation
         out.append(card.HandSwap(c))        # Hand Swap
         out.append(card.SeatSwap(c))        # Seat Swap
         out.append(card.HandRotate(c))      # Hand Rotate
