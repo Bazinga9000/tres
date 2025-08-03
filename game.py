@@ -82,9 +82,7 @@ class Game:
         if len(self.active_player.hand) == 0:
             # Assign penalty points
             for p in self.players:
-                # todo: cards might fuck with penalty points more than just adding them
-                for c in p.hand:
-                    p.score += c.penalty_points
+                p.score += p.hand.penalty_value()
 
             self.round += 1
             self.turn = 1
@@ -212,8 +210,8 @@ class TurnStarterView(TurnTrackingView):
             return
 
         e = discord.Embed(
-            title=f"{p.display_name}'s Hand",
-            description=f"You have {len(p.hand)} card(s) in hand.",
+            title=f"{p.display_name}'s Hand (Size {len(p.hand)})",
+            description=f"Your hand had a total penalty value of {p.hand.penalty_value()}",
             color=discord.Colour.blurple(),
         )
 

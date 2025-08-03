@@ -37,6 +37,12 @@ class Hand:
     def display_all_cards(self) -> str:
         return "\n".join(i.display_name for i in self.sorted())
 
+    def penalty_value(self) -> int:
+        '''
+        Return the total amount of penalty points incurred by this hand.
+        '''
+        return sum(i.penalty_points for i in self)
+
     def render_all_cards(self) -> list[Image.Image]:
         '''
         Gives a sorted list of renders of cards in hand.
