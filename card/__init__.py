@@ -14,6 +14,7 @@ from card.cards.pile_shuffle import PileShuffle
 from card.cards.draw_times import DrawTimes
 from card.cards.knight import Knight
 from card.cards.revelation import Revelation
+from card.cards.oopsie_daisy import OopsieDaisy
 
 # Empty lambda to produce multiple copies of red 40
 Red40 = lambda: NumberCard(CardColor.RED, 40)
@@ -38,5 +39,6 @@ __all__ = [
     'PileShuffle',
     'DrawTimes',
     'Knight',
-    'Revelation'
+    'Revelation',
+    'OopsieDaisy'
 ]
