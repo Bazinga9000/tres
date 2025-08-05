@@ -7,7 +7,7 @@ from views.argbuilder import ArgBuilder
 
 class MetaDraw(Card):
     def __init__(self, color: CardColor):
-        super().__init__(color, 30, 0, f"metadraw", True)
+        super().__init__(color, 30, 0, "metadraw", True)
 
     @property
     @override
