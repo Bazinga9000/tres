@@ -16,7 +16,4 @@ class SeatSwap(Card):
         return ArgBuilder[Game]().add_player(skip_self=True).with_callback(self.on_play)
 
     def on_play(self, game: Game, player: Player):
-        my_seat = game.whose_turn
-        their_seat = game.players.index(player)
-        game.players[my_seat], game.players[their_seat] = game.players[their_seat], game.players[my_seat]
-        game.whose_turn = their_seat
+        game.table.swap_players(game.table.active_player, player)

@@ -46,15 +46,15 @@ class ArgBuilder[S, *Ts](ArgBuilderBase[S]):
     def add_player(self: Self[Game, *Ts], placeholder: str = 'Select a player.', *, skip_self: bool):
         def factory(game: Game):
             def converter(value: str):
-                player = game.find_player_id(int(value))
+                player = game.table.find_unejected_player_id(int(value))
                 if player is None:
-                    raise ValueError('Selected player not found in game.')
+                    raise ValueError('Selected player not found in game or was ejected.')
                 return player
             select = TypedSelect(converter)
             select.placeholder = placeholder
             select.options = [
                 SelectOption(label=player.display_name, value=str(player.id))
-                for player in game.players
+                for player in game.table.starting_with_you
                 if player != game.active_player or not skip_self
             ]
             return select

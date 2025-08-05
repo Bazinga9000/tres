@@ -38,11 +38,10 @@ class ReverseSkipDraw(Card):
 
     def on_play(self, game: Game):
         if self.r:
-            game.players = game.players[::-1]
-            game.whose_turn = len(game.players) - game.whose_turn - 1
+            game.table.reverse_direction()
 
         if self.s > 0:
-            game.whose_turn = (game.whose_turn + self.s) % len(game.players)
+            game.table.skip(self.s)
 
         if self.d > 0:
             game.card_debt += self.d

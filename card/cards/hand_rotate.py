@@ -16,7 +16,8 @@ class HandRotate(Card):
         return ArgBuilder().with_callback(self.on_play)
 
     def on_play(self, game: Game):
-        hands = [p.hand for p in game.players]
+        non_ejected_players = [p for p in game.table.starting_with_you]
+        hands = [p.hand for p in non_ejected_players]
         hands.insert(0, hands.pop())
-        for i in range(len(game.players)):
-            game.players[i].hand = hands[i]
+        for i in range(len(non_ejected_players)):
+            non_ejected_players[i].hand = hands[i]

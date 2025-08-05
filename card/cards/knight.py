@@ -15,7 +15,7 @@ class Knight(Card):
         return ArgBuilder().with_callback(self.on_play)
 
     def on_play(self, game: Game):
-        for p in game.players:
+        for p in game.table.starting_with_you:
             if len(p.hand) >= 8:
                 for _ in range(len(p.hand)//2):
                     p.hand.remove_card(random.choice(p.hand.cards))

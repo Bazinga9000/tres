@@ -17,11 +17,11 @@ class OopsieDaisy(Card):
     def on_play(self, game: Game):
         hand_sizes: list[int] = []
         all_cards: list[Card] = []
-        for p in game.players:
+        for p in game.table.starting_with_you:
             hand_sizes.append(len(p.hand))
             all_cards.extend(p.hand)
             p.hand.cards = []
         random.shuffle(all_cards)
-        for n,p in enumerate(game.players):
+        for n,p in enumerate(game.table.starting_with_you):
             for _ in range(n):
                 p.hand.add_card(all_cards.pop())

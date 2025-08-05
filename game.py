@@ -2,7 +2,6 @@ from collections.abc import Callable
 from typing import Coroutine
 import discord
 import game_db
-import random
 from pregame import PreGame
 from game_components import Player
 from views.cardview import CardView
@@ -10,6 +9,7 @@ import game_components.decks as decks
 import util.image_util
 import io
 from PIL import Image
+from game_components import Table
 
 class Game:
     def __init__(self, pregame: PreGame):
@@ -17,21 +17,19 @@ class Game:
         self.uuid = pregame.uuid
         game_db.games[self.uuid] = self
 
-        self.players = [Player(i) for i in pregame.players]
+        self.table = Table([Player(i) for i in pregame.players])
         self.channel = pregame.channel
         self.name = pregame.name
 
         # Set up game
         self.round = 1
         self.turn = 1
-
-        random.shuffle(self.players)
-        self.whose_turn = 0
+        self.table.populate_round()
 
         # todo more robust deck implementation (for e.g procedural deck)
         self.deck = decks.TestDeck()
 
-        for p in self.players:
+        for p in self.table.turn_order:
             for _ in range(7):
                 p.hand.add_card(self.deck.draw_from_deck())
 
@@ -45,7 +43,7 @@ class Game:
 
     @property
     def active_player(self):
-        return self.players[self.whose_turn]
+        return self.table.active_player
 
     # Called at the start of a game
     async def on_start(self):
@@ -61,8 +59,7 @@ class Game:
         )
 
         # Turn order graphic (text for now)
-        turn_order = " > ".join(f"**{u.display_name}**" if i == self.whose_turn else u.display_name for (i,u) in enumerate(self.players))
-        e.add_field(name="Turn Order", value=turn_order)
+        e.add_field(name="Turn Order", value=self.table.turn_order_text())
 
         e.add_field(name="Top Card", value=self.piles[0][-1].display_name)
 
@@ -81,17 +78,18 @@ class Game:
     async def end_turn(self):
         if len(self.active_player.hand) == 0:
             # Assign penalty points
-            for p in self.players:
-                p.score += p.hand.penalty_value()
+            for p in self.table.turn_order:
+                if not p.ejected: # ejected players are scored immediately upon ejection, no need to double score them
+                    p.score += p.hand.penalty_value()
 
             self.round += 1
             self.turn = 1
             game_db.games[self.uuid] = None # End the game (that is, remove it from the database)
             await self.channel.send(f"The game is over! **{self.active_player.display_name}** has won!")
             # todo - sort this
-            await self.channel.send(f"**Final Scores**\n{'\n'.join(f"{p.display_name} - {p.score} points" for p in self.players)}")
+            await self.channel.send(f"**Final Scores**\n{'\n'.join(f"{p.display_name} - {p.score} points" for p in self.table.all_players)}")
         else:
-            self.whose_turn = (self.whose_turn + 1) % len(self.players)
+            self.table.tick()
             self.turn += 1
             await self.start_turn()
 
@@ -102,13 +100,6 @@ class Game:
             player.hand.add_card(c)
             c.on_draw(self, player)
 
-    def find_player_id(self, player_id: int) -> Player | None:
-        for p in self.players:
-            if p.id == player_id:
-                return p
-
-        return None
-
     async def render(self) -> Image.Image:
         '''
         Renders the current game state as an image.
@@ -118,8 +109,13 @@ class Game:
 
         player_images : list[Image.Image] = []
 
-        for p in self.players:
+        for p in self.table.turn_order:
             p_img : list[Image.Image] = []
+            if self.table.direction_of_play == 1:
+                p_img.append(util.image_util.open_rgba("assets/ui/arrow_down.png"))
+            else:
+                p_img.append(util.image_util.open_rgba("assets/ui/arrow_up.png"))
+
             avatar_asset = p.discord_user.avatar
             assert avatar_asset is not None
             avatar_bytes = await avatar_asset.read()
@@ -206,10 +202,13 @@ class TurnStarterView(TurnTrackingView):
             await interaction.respond("Who am I talking to? Am I just a ghost in the machine?")
             return
 
-        p = self.game.find_player_id(interaction.user.id)
-
-        if p is None:
+        if self.game.table.find_player_id(interaction.user.id) is None:
             await interaction.respond("You aren't in the game!", ephemeral=True)
+            return
+
+        p = self.game.table.find_unejected_player_id(interaction.user.id)
+        if p is None:
+            await interaction.respond("You've been ejected from this round!", ephemeral=True)
             return
 
         e = discord.Embed(
