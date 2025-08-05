@@ -7,7 +7,7 @@ import random
 
 class PileShuffle(Card):
     def __init__(self, color: CardColor):
-        super().__init__(color, 5, 0, f"pile_shuffle", False)
+        super().__init__(color, 5, 0, "pile_shuffle", False)
 
     @property
     @override

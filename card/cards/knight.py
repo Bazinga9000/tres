@@ -7,7 +7,7 @@ import random
 
 class Knight(Card):
     def __init__(self, color: CardColor):
-        super().__init__(color, 30, 0, f"knight", False)
+        super().__init__(color, 30, 0, "knight", False)
 
     @property
     @override
