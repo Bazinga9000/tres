@@ -15,6 +15,7 @@ from card.cards.draw_times import DrawTimes
 from card.cards.knight import Knight
 from card.cards.revelation import Revelation
 from card.cards.oopsie_daisy import OopsieDaisy
+from card.cards.color_void import ColorVoid
 
 # Empty lambda to produce multiple copies of red 40
 Red40 = lambda: NumberCard(CardColor.RED, 40)
@@ -40,5 +41,6 @@ __all__ = [
     'DrawTimes',
     'Knight',
     'Revelation',
-    'OopsieDaisy'
+    'OopsieDaisy',
+    'ColorVoid'
 ]
