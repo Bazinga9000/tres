@@ -33,10 +33,10 @@ def make_test_deck() -> list[card.Card]:
         out.append(card.OopsieDaisy(c)) # Oopsie Daisy
 
     # Cards with fixed colors
-    for _ in range(2):
+    for _ in range(6):
         out.append(card.WildDrawCard(4))        # Wild Draw 4
         out.append(card.WildColorMagnet())
-    for _ in range(5):
+    for _ in range(15):
         out.append(card.WildCard())             # Wild Cards
     out.append(card.Red40())                    # Red 40
     out.append(card.DeadWeight())               # Dead Weight
