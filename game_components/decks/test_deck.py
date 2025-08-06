@@ -35,6 +35,7 @@ def make_test_deck() -> list[card.Card]:
     # Cards with fixed colors
     for _ in range(2):
         out.append(card.WildDrawCard(4))        # Wild Draw 4
+        out.append(card.WildColorMagnet())
     for _ in range(5):
         out.append(card.WildCard())             # Wild Cards
     out.append(card.Red40())                    # Red 40

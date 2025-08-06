@@ -47,6 +47,14 @@ class Table:
         '''
         return self.round_participants[self.active_player_index]
 
+    @property
+    def next_player(self) -> Player:
+        '''
+        Returns the player who is next in the turn order.
+        '''
+        next_ind = self.next_unejected_index(self.active_player_index)
+        return self.round_participants[next_ind]
+
     def next_unejected_index(self, cursor: int) -> int:
         '''
         Starting at the player at index cursor, return the index (in turn order) of the next player who is NOT ejected
