@@ -14,12 +14,13 @@ from game import Game
 
 @dataclass
 class Card[T]:
-    color: CardColor
-    rules: str
-    penalty_points: int
-    number_value: int
-    card_type: str
-    can_play_on_debt: bool
+    color: CardColor # the card's color
+    rules: str # the rules text of the card
+    penalty_points: int # the card's penalty point value
+    number_value: int # the card's value when treated as a number (e.g metadraw)
+    card_type: str # the type of the card, used for matching rules
+    can_play_on_debt: bool # whether or not this card is stackable when you have card debt
+    raw_name: str # the pre-formatted display name
 
     # hooks
     args: ArgBuilderBase[T]
@@ -109,3 +110,12 @@ class Card[T]:
         key.append(int(self.uuid))
 
         return key
+
+    @property
+    def display_name(self) -> str:
+        # todo: do this in a nicer way, please
+        return self.raw_name.replace(
+            "%C", self.color.display_name
+        ).replace(
+            "%A", self.color.article.title()
+        )
