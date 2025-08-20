@@ -131,7 +131,13 @@ class Game:
 
             player_images.append(util.image_util.image_row(p_img, 0, True))
 
-        return util.image_util.image_column(player_images)
+        players = util.image_util.image_column(player_images)
+
+        # Render all the piles
+        top_card_images = [i[-1].render() for i in self.piles]
+        pile = util.image_util.image_row(top_card_images, (top_card_images[0].width)//2)
+
+        return util.image_util.image_column([players, pile], 50, True)
 
 
 # A view that can keep track of the game's turns, and disable callbacks if they're out of turn

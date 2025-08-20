@@ -22,12 +22,16 @@ def image_row(images: list[Image.Image], offset: int = 0, center: bool = False) 
     '''
     Given a set of images, create a single image where the composite images are placed left to right.
 
-    If offset is set, overlay each image on top of the previous one with an overlap of that much.
+    If offset is set and negative, overlay each image on top of the previous one with an overlap of that much.
+    If offset is set and positive, separate each image from the previous one with by that much.
     If center is set, images will be aligned to the center
     '''
     assert images != []
 
-    total_width = sum([i.width for i in images]) - (offset * len(images))
+    if len(images) == 1:
+        return images[0]
+
+    total_width = sum([i.width for i in images]) + (offset * (len(images) - 1))
     max_height = max([i.height for i in images])
 
     out = Image.new("RGBA", (total_width, max_height))
@@ -40,7 +44,7 @@ def image_row(images: list[Image.Image], offset: int = 0, center: bool = False) 
             y = 0
         out.paste(im, (accum, y))
         accum += im.width
-        accum -= offset
+        accum += offset
 
     return out
 
@@ -51,8 +55,11 @@ def image_column(images: list[Image.Image], offset: int = 0, center: bool = Fals
     '''
     assert images != []
 
+    if len(images) == 1:
+        return images[0]
+
     max_width = max([i.width for i in images])
-    total_height = sum([i.height for i in images]) - (offset * len(images))
+    total_height = sum([i.height for i in images]) + (offset * (len(images) - 1))
 
     out = Image.new("RGBA", (max_width, total_height))
     accum = 0
@@ -64,7 +71,7 @@ def image_column(images: list[Image.Image], offset: int = 0, center: bool = Fals
             x = 0
         out.paste(im, (x, accum))
         accum += im.height
-        accum -= offset
+        accum += offset
 
     return out
 
