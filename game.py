@@ -61,7 +61,7 @@ class Game:
         # Turn order graphic (text for now)
         e.add_field(name="Turn Order", value=self.table.turn_order_text())
 
-        e.add_field(name="Top Card", value=self.piles[0][-1].display_name)
+        # e.add_field(name="Top Card", value=self.piles[0][-1].display_name)
 
         e.add_field(name="Card Debt", value=str(self.card_debt))
 
