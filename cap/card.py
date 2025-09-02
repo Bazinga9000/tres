@@ -1,60 +1,37 @@
-from dataclasses import dataclass, field
-from enum import Flag, auto
-from typing import Callable
-from uuid import UUID, uuid4
-
-from game_components.player import Player
-from views.argbuilder import ArgBuilder, ArgBuilderBase
-
-# TODO: copied from existing card color
-class CardColor(Flag):
-    RED = auto()
-    ORANGE = auto()
-    YELLOW = auto()
-    GREEN = auto()
-    BLUE = auto()
-    PURPLE = auto()
-
-
-NO_COLORS = CardColor(0)
-ALL_COLORS = CardColor.RED | CardColor.ORANGE | CardColor.YELLOW | CardColor.GREEN | CardColor.BLUE | CardColor.PURPLE
-
-
-# TODO: separate
+from discord.ui.view import View
+from .argfunc import ArgFunc
 from game import Game
 
-@dataclass(frozen=True)
-class Card[T]:
-    color: CardColor
-    rules: str
-    penalty_points: int
-    number_value: int
-    card_type: str
-    can_play_on_debt: bool
-    
-    args: ArgBuilderBase[T]
-    uuid: UUID = field(default_factory=uuid4)
 
-def card[*Ts](args: ArgBuilder[Game, *Ts] = ArgBuilder[Game]()):
-    def decorator(func: Callable[[Game, *Ts], None]):
-        def wrapper(color: CardColor, number_value: int):
-            return Card(
-                color=color,
-                rules=func.__doc__ or "",
-                penalty_points=number_value,
-                number_value=number_value,
-                card_type=func.__name__,
-                can_play_on_debt=False,
-                args=args.with_callback(func)
-            )
-        return wrapper
+from discord import SelectOption
+from discord.ui import View
+from game import Game
+from views.select.base import BaseSelect
+
+
+def compile_selects(func: ArgFunc[Game, Game], view: View, game: Game):
+    def build_select(options: list[str]):
+        select = BaseSelect()
+        select.options = [SelectOption(label=opt, value=opt) for opt in options]
+        view.add_item(select)
+        return select.get_raw_value
+    return func.compile(build_select, game)
+
+
+def card[*Ts](
+    default_penalty_points: int = 0,
+    default_card_type: str | None = None,
+    default_raw_name: str | None = None,
+    default_debtstackable: bool = False,
+    default_number_value : int = 0,
+    default_rules: str | None = None
+):
+    def decorator(fun: ArgFunc[Game, Game].Inner) -> None:
+        on_play: ArgFunc[Game, Game] = ArgFunc(fun, lambda g: [], lambda g: lambda s: g)
+        
+        # to create select menu
+        view: View = ... # type: ignore
+        game: Game = ... # type: ignore
+        compile_selects(on_play, view, game)
+    
     return decorator
-
-@card(
-    ArgBuilder[Game]()
-        .add_player('Select a player to swap hands with.', skip_self=True)
-)
-def hand_swap(game: Game, player: Player):
-    '''Swap hands with a player of your choice.'''
-    
-    player.hand, game.active_player.hand = game.active_player.hand, player.hand
