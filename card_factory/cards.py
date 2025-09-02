@@ -1,9 +1,8 @@
-from typing import Callable
 import util.number_names
 import random
 
 from .factory import CardFactory, card
-from .color import CardColor, ALL_COLORS
+from .color import CardColor
 from .abc import Card
 from game import Game
 
@@ -108,7 +107,7 @@ def metadraw(game: Game):
 )
 def oopsie_daisy(game: Game):
     hand_sizes: list[int] = []
-    all_cards: list[Card] = []
+    all_cards: list[Card[Game]] = []
     for p in game.table.starting_with_you:
         hand_sizes.append(len(p.hand))
         all_cards.extend(p.hand)

@@ -7,6 +7,8 @@ type Factory[T] = F[[], T]
 class ArgFunc[S, *Ts, T]:
     type Inner[X] = Callable[[*Ts, T], None] | ArgFunc[S, *Ts, T, X]
     def __init__[X](self, inner: Inner[X], options: F[[S], list[str]], converter: F[[S], F[[str], T]]):
+        self.__name__ = inner.__name__
+        self.__doc__ = inner.__doc__
         self.inner = inner
         self.options = options
         self.converter = converter
