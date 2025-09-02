@@ -1,5 +1,6 @@
-from typing import Callable
-
+from typing import Callable, Concatenate
+from .argument import Argument, ArgumentBase
+from functools import wraps
 
 # TODO: make these typing aliases more global
 type F[**P, T] = Callable[P, T]
@@ -7,43 +8,40 @@ type Factory[T] = F[[], T]
 
 class ArgFunc[S, *Ts, T]:
     type Inner[X] = Callable[[*Ts, T], None] | ArgFunc[S, *Ts, T, X]
-    def __init__[X](self, inner: Inner[X], options: F[[S], list[str]], converter: F[[S], F[[str], T]]):
+    def __init__[X](self, inner: Inner[X], arg_factory: F[[S], Argument[T]]):
         self.__name__ = inner.__name__
         self.__doc__ = inner.__doc__
         self.inner = inner
-        self.options = options
-        self.converter = converter
+        self.arg_factory = arg_factory
+        # i would like to make this a dataclass but i don't think you can capture the generic X -cap
     
-    def call(self, arg: S, factory: Factory[str], args: Factory[tuple[*Ts]]):
-        converter = self.converter(arg)
-        get_args = lambda: (*args(), converter(factory()))
+    def call(self, seed: S, factory: Factory[str], args: Factory[tuple[*Ts]]):
+        argument = self.arg_factory(seed)
+        get_args = lambda: (*args(), argument.parse(factory()))
         
         inner = self.inner
         if callable(inner):
             return None, lambda: inner(*get_args())
         else:
             def callback(new_factory: Factory[str], /):
-                return inner.call(arg, new_factory, get_args)
-            return inner.options(arg), callback
+                return inner.call(seed, new_factory, get_args)
+            return inner.arg_factory(seed), callback
     
-    def compile(self, hooks: F[[list[str]], Factory[str]], arg: S, *args: *Ts):
-        options = self.options(arg)
-        ret = self.call(arg, hooks(options), lambda: args)
+    def compile(self, hooks: F[[ArgumentBase], Factory[str]], seed: S, *args: *Ts):
+        argument = self.arg_factory(seed)
+        ret = self.call(seed, hooks(argument), lambda: args)
         while ret[0] is not None:
-            options, callback = ret
-            ret = callback(hooks(options))
+            argument, callback = ret
+            ret = callback(hooks(argument))
+            print(ret)
         return ret[1]
     
+    # TODO: what if i import @decorates... -cap
     @staticmethod
-    def create[SS, TT](func: F[[SS], tuple[list[str], F[[str], TT]]]):
-        # TODO: combining opts and conv would make this much better
-        # also the nested generics are pain
-        def wrapper[*TTs, X](inner: ArgFunc[SS, *TTs, TT].Inner[X]) -> ArgFunc[SS, *TTs, TT]:
-            def options(arg: SS) -> list[str]:
-                opts, _ = func(arg)
-                return opts
-            def converter(arg: SS) -> F[[str], TT]:
-                _, conv = func(arg)
-                return conv
-            return ArgFunc(inner, options, converter)
+    def create[SS, TT, **P](func: F[Concatenate[SS, P], Argument[TT]]):
+        @wraps(func)
+        def wrapper[*TTs, X](*args: P.args, **kwargs: P.kwargs) -> F[[ArgFunc[SS, *TTs, TT].Inner[X]], ArgFunc[SS, *TTs, TT]]:
+            def decorator(inner: ArgFunc[SS, *TTs, TT].Inner[X]) -> ArgFunc[SS, *TTs, TT]:
+                return ArgFunc(inner, lambda seed: func(seed, *args, **kwargs))
+            return decorator
         return wrapper

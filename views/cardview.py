@@ -5,6 +5,8 @@ from discord import ButtonStyle, SelectOption
 from discord.interactions import Interaction
 from discord.ui import Button, Item, View
 
+from card.argument import ArgumentBase
+
 from .select.base import BaseSelect
 from .select.typed import TypedSelect
 
@@ -91,10 +93,13 @@ class CardView(View):
             ]
             self.add_item(pile_select)
             
-            def build_select(options: list[str]):
-                if options:
+            def build_select(argument: ArgumentBase):
+                print(argument)
+                print(argument.options)
+                if argument.options:
                     select = BaseSelect()
-                    select.options = [SelectOption(label=opt, value=opt) for opt in options]
+                    select.placeholder = argument.placeholder
+                    select.options = [SelectOption(label=opt.name, value=opt.id) for opt in argument.options]
                     self.add_item(select)
                     return select.get_raw_value
                 else:

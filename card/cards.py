@@ -1,11 +1,14 @@
 import random
+from .argument import Argument
+from .option import Option
 from game_components.player import Player
 from .argfunc import ArgFunc
 from typing import Callable
-from .color import CardColor
+from .color import ALL_COLORS, CardColor
 from .abc import Card
 import util.number_names
 # TODO: clean up imports -cap
+# TODO: lots of functools.wraps missing -caps
 
 from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
@@ -21,10 +24,11 @@ def card(
     can_play_on_debt: bool = False,
     number_value : int = 0,
     rules: str | None = None
-):
+): # TODO: ParamSpec this for things like number cards -cap
     def decorator(fun: ArgFunc[Game, Game].Inner) -> Callable[[CardColor], Card[Game]]:
-        on_play: ArgFunc[Game, Game] = ArgFunc(fun, lambda g: [], lambda g: lambda s: g)
-        on_draw: ArgFunc[Game, Game] = ArgFunc(lambda g: None, lambda g: [], lambda g: lambda s: g)
+        get_game: Callable[[Game], Argument[Game]] = lambda g: Argument(placeholder='', options=(), default=g)
+        on_play = ArgFunc(fun, get_game)
+        on_draw = ArgFunc(lambda g: None, get_game)
         
         # TODO: we probably have to turn this into a class again...
         # idea to reduce repetition: make the CardFactory store the below function instead of all the values
@@ -46,38 +50,51 @@ def card(
 ## arg selectors
 
 @ArgFunc.create
-def choose_player(game: Game):
-    def converter(value: str):
-        player = game.table.find_unejected_player_id(int(value))
-        if player is None:
-            raise ValueError('Selected player not found in game or was ejected.')
-        return player
-    return [str(player.id) for player in game.table.starting_with_you], converter
+def choose_player(game: Game, placeholder: str = 'Choose a player.', * , skip_self: bool = False):
+    return Argument(
+        placeholder=placeholder,
+        options=tuple(
+            Option(
+                name=player.display_name,
+                id=str(player.id),
+                value=player
+            )
+            for player in game.table.starting_with_you
+            if not (skip_self and player == game.active_player)
+        )
+    )
 
 @ArgFunc.create
-def choose_color(game: Game):
-    def converter(value: str):
-        return CardColor(int(value))
-    return [str(color.value) for color in CardColor], converter
+def choose_color(game: Game, placeholder: str = 'Choose a color.', ):
+    return Argument(
+        placeholder=placeholder,
+        options=tuple(
+            Option(
+                name=(color.name or '???').title(),
+                id=str(color.value),
+                value=color
+            )
+            for color in CardColor
+        )
+    )
 
-## testing cards
+@ArgFunc.create
+def choose_card(game: Game, *, requires_playable: bool = False):
+    # TODO: is there a way to prevent the same card from being selected?
+    return Argument(
+        placeholder='Choose a card.',
+        options=tuple(
+            Option(
+                name=card.display_name,
+                id=str(card.uuid),
+                value=card
+            )
+            for card in game.active_player.hand.sorted()
+            if card.can_play(game, game.active_pile) or not requires_playable
+        )
+    )
 
-@card()
-def skip_turn(game: Game):
-    ...
-
-@card(number_value=9999999)
-@choose_player
-def eject_player(game: Game, player: Player[Game]):
-    player.eject()
-
-@card(rules='you have to play this card')
-@choose_player
-@choose_color
-def change_player_to_color(game: Game, player: Player[Game], color: CardColor):
-    print(f'{player.display_name} is now {color.name}')
-
-## actual cards
+## cards
 
 def number_card(n: int):
     return card(
@@ -120,41 +137,22 @@ def hand_rotate(game: Game):
     for i in range(len(non_ejected_players)):
         non_ejected_players[i].hand = hands[i]
 
+@card(
+    penalty=30,
+)
+@choose_player(skip_self=True)
+def hand_swap(game: Game, target: Player[Game]): # TODO: type Player = Player[Game]?
+    game.active_player.hand, target.hand = target.hand, game.active_player.hand
 
-# TODO: NEEDS ARGBUILDER
-'''
-class HandSwap(Card):
-    def __init__(self, color: CardColor):
-        super().__init__(color, 30, 0, "hand_swap", False)
-
-    @property
-    @override
-    def args(self):
-        return ArgBuilder[Game]().add_player(skip_self=True).with_callback(self.on_play)
-
-    def on_play(self, game: Game, player: Player):
-        player.hand, game.active_player.hand = game.active_player.hand, player.hand
-
-
-class Kissaroo(Card):
-    def __init__(self, c: CardColor):
-        super().__init__(c, 50, 0, "kissaroo", False)
-        if self.color_name()[0].lower() in ["a","e","i","o","u"]:
-            article = "An"
-        else:
-            article = "A"
-
-        self.display_name = f"{article} {self.color_name()} Kissaroo from Me to You"
-
-    @property
-    @override
-    def args(self):
-        return ArgBuilder[Game]().add_card(requires_playable=False).add_player(skip_self=True).with_callback(self.on_play)
-
-    def on_play(self, game: Game, card: Card, target: Player):
-        game.active_player.hand.remove_card(card)
-        target.hand.add_card(card)
-'''
+@card(
+    penalty=50
+)
+@choose_player(skip_self=False) # TODO: set to true - this is just for testing
+@choose_card(requires_playable=False)
+def kissaroo(game: Game, target: Player[Game], card: Card[Game]):
+    # TODO: display name doesn't work here
+    game.active_player.hand.remove_card(card)
+    target.hand.add_card(card)
 
 
 @card(
@@ -252,74 +250,80 @@ def reverse_skip_draw(*, reverse: bool = False, skips: int = 0, draws: int = 0):
     return on_play
 
 
-# TODO: REQUIRES ARGBUILDER
-'''
-class SeatSwap(Card):
-    def __init__(self, color: CardColor):
-        super().__init__(color, 30, 0, "seat_swap", False)
+@card(
+    penalty=30,
+)
+@choose_player(skip_self=True)
+def seat_swap(game: Game, target: Player[Game]):
+    game.table.swap_players(game.table.active_player, target)
 
-    @property
-    @override
-    def args(self):
-        return ArgBuilder[Game]().add_player(skip_self=True).with_callback(self.on_play)
 
-    def on_play(self, game: Game, player: Player):
-        game.table.swap_players(game.table.active_player, player)
-'''
-
-def apply_wild(card: Card[Game], color: CardColor):
+def apply_wild(game: Game, color: CardColor):
     '''
     Utility method to update a color changing card's color.
     This will also add %C to the raw name if it is not already present.
     '''
+    card = game.piles[game.active_pile][-1]
     card.color = color
     if "%C" not in card.raw_name:
         card.raw_name = "%C " + card.raw_name
 
 
-# TODO: all wild X cards require argbuilder, but i've done a bit of the work here already - baz
-'''
-@constant_color(ALL_COLORS)
-@card(
-    default_penalty_points = 50,
-    default_raw_name = "Wild"
-)
-def wild(self: Card[Game], game: Game, color: CardColor):
-    apply_wild(self, color)
+def constant_color(color: CardColor):
+    def decorator(fun: Callable[[CardColor], Card[Game]]) -> Callable[[], Card[Game]]:
+        def wrapper():
+            return fun(color)
+        return wrapper
+    return decorator
 
 @constant_color(ALL_COLORS)
 @card(
-    default_penalty_points = 50,
-    default_raw_name = "Wild Color Magnet"
+    penalty=50,
+    raw_name="Wild"
 )
-def wild_color_magnet(self: Card[Game], game: Game, color: CardColor):
-    apply_wild(self, color)
+@choose_color()
+def wild(game: Game, color: CardColor):
+    apply_wild(game, color)
+
+
+@constant_color(ALL_COLORS)
+@card(
+    penalty = 50,
+    raw_name = "Wild Color Magnet"
+)
+@choose_color()
+def wild_color_magnet(game: Game, color: CardColor):
+    apply_wild(game, color)
     next = game.table.next_player
     while True:
         c = game.deck.draw_from_deck()
         next.hand.add_card(c)
 
-        if c.color == self.color: # todo: should this be an exact match?
+        if c.color == color: # todo: should this be an exact match?
             break
 
 def wild_draw_n(n: int):
     assert n >= 0
     @constant_color(ALL_COLORS)
     @card(
-        default_penalty_points = 50,
-        default_card_type = f"wild_draw_{n}",
-        default_raw_name = f"Wild Draw {n}"
+        penalty = 50,
+        card_type = f"wild_draw_{n}",
+        raw_name = f"Wild Draw {n}"
     )
-    def factory(self: Card[Game], game: Game, color: CardColor):
-        apply_wild(self, color)
+    @choose_color()
+    def on_play(game: Game, color: CardColor):
+        apply_wild(game, color)
         game.card_debt += n
-    return factory
+    return on_play
 
-@card(
-    default_penalty_points = 50,
-)
-def wild_number(self: Card[Game], game: Game, n: int):
-    self.card_type = str(n)
-    self.number_value = n
-    self.display_name = f'{self.display_name} ({n})'
-'''
+def wild_number(n: int):
+    @constant_color(ALL_COLORS)
+    @card(
+        penalty = n,
+        number_value = n,
+        card_type = str(n),
+    )
+    @choose_color()
+    def on_play(game: Game, color: CardColor):
+        apply_wild(game, color)
+    return on_play
