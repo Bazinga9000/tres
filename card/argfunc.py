@@ -1,6 +1,7 @@
 from typing import Callable
 
 
+# TODO: make these typing aliases more global
 type F[**P, T] = Callable[P, T]
 type Factory[T] = F[[], T]
 
@@ -15,8 +16,7 @@ class ArgFunc[S, *Ts, T]:
     
     def call(self, arg: S, factory: Factory[str], args: Factory[tuple[*Ts]]):
         converter = self.converter(arg)
-        new_arg = converter(factory())
-        get_args = lambda: (*args(), new_arg)
+        get_args = lambda: (*args(), converter(factory()))
         
         inner = self.inner
         if callable(inner):

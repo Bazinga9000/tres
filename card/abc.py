@@ -1,70 +1,51 @@
-import abc
+# TODO: this being named abc doesn't make sense anymore -cap
+
 from typing import TYPE_CHECKING, Any
-import uuid
+from uuid import UUID, uuid4
 import os.path
 import util.image_util
 
+from dataclasses import dataclass, field
+
 
 from card.color import CardColor
-from views.argbuilder import ArgBuilder, ArgBuilderBase
 from PIL import Image
-
+from .argfunc import ArgFunc
 
 # TODO: this solves circular dependency, but it's probably better to just refactor so that the type doesn't exist in the first place -cap
 if TYPE_CHECKING:
     from game import Game
-    from game_components import Player # absolute cinema - baz
 else:
     Game = Any
     CardArg = Any
     CardView = Any
     Player = Any
 
-class Card(abc.ABC):
-    def __init__(self,
-        color: CardColor, # The card's color
-        penalty_points: int, # How much the card is worth when unplayed at the end of the round
-        number_value: int, # The card's value, if treated as a number in-game
-        card_type: str, # The type of the card (by default, cards are playable on cards of the same type)
-        can_play_on_debt: bool # Can you play this card while you have card debt?
-    ):
-        self.color = color
-        self.penalty_points = penalty_points
-        self.number_value = number_value
-        self.card_type = card_type
-        self.can_play_on_debt = can_play_on_debt
 
-        # The uuid of a card.
-        # Todo. Have it change if the card is cloned to ensure uniqueness
-        self.uuid = uuid.uuid4()
+@dataclass
+class Card[T]:
+    color: CardColor # the card's color
+    rules: str # the rules text of the card
+    penalty_points: int # the card's penalty point value
+    number_value: int # the card's value when treated as a number (e.g metadraw)
+    card_type: str # the type of the card, used for matching rules
+    can_play_on_debt: bool # whether or not this card is stackable when you have card debt
+    raw_name: str # the pre-formatted display name
 
-        # The display name of the card. Used to textually represent a card.
-        # This defualt value should be overridden if the card has a special naming scheme (e.g is in only one color)
-        self.display_name = f"{self.color_name()} {self.card_type}".replace("_"," ").title()
-
-    @property
-    def args(self) -> ArgBuilderBase[Game]:
-        '''Returns the arguments for this card.'''
-
-        return ArgBuilder()
-
-    # Gets the color name of this card, used to
-    def color_name(self):
-
-        color_names = {
-            CardColor.RED: "Red",
-            CardColor.ORANGE: "Orange",
-            CardColor.YELLOW: "Yellow",
-            CardColor.GREEN: "Green",
-            CardColor.BLUE: "Blue",
-            CardColor.PURPLE: "Purple"
-        }
-
-        return "/".join(v for (k,v) in color_names.items() if k in self.color)
+    # hooks
+    # TODO: actually hook the hook
+    type CardFunc = ArgFunc[T, T]
+    on_play: CardFunc
+    on_draw: CardFunc
+    
+    # autogenerate UUID
+    uuid: UUID = field(default_factory=uuid4)
 
     # Checks whether this card can be played on a given pile
     # Defaults to standard UNO rules (at least one matching color OR matching card type)
+    # todo: hookify this
     def can_play(self, game: Game, pile_index: int):
+        # TODO: these and the other methods which reference Game should be moved to Game imo -cap
         top_card = game.piles[pile_index][-1]
         if game.card_debt > 0 and not self.can_play_on_debt:
             return False
@@ -74,10 +55,6 @@ class Card(abc.ABC):
         '''Returns a list of piles that this card can be played on.'''
 
         return [i for i in range(len(game.piles)) if self.can_play(game, i)]
-
-    # Called *after* the card is put into the hand
-    def on_draw(self, game: Game, player: Player):
-        pass
 
     def render(self) -> Image.Image:
         assets_location = "assets"
@@ -145,3 +122,12 @@ class Card(abc.ABC):
         key.append(int(self.uuid))
 
         return key
+
+    @property
+    def display_name(self) -> str:
+        # todo: do this in a nicer way, please
+        return self.raw_name.replace(
+            "%C", self.color.display_name
+        ).replace(
+            "%A", self.color.article.title()
+        )

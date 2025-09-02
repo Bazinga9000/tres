@@ -1,3 +1,9 @@
+from typing import TYPE_CHECKING
+if not TYPE_CHECKING:
+    from typing import Any
+    Any.__class__.__getitem__ = lambda self, *args: self
+    # trololololo
+
 import discord
 import os # default module
 from dotenv import load_dotenv

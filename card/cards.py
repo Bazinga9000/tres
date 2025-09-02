@@ -1,26 +1,95 @@
-import util.number_names
 import random
-
-from .factory import CardFactory, card
+from game_components.player import Player
+from .argfunc import ArgFunc
+from typing import Callable
 from .color import CardColor
 from .abc import Card
-from game import Game
+import util.number_names
+# TODO: clean up imports -cap
 
-def number_card(n: int) -> CardFactory[Game]:
-    @card(
-        default_penalty_points = n,
-        default_number_value = n,
-        default_card_type = str(n),
-    )
-    def factory(game: Game):
-        pass
-    return factory
+from typing import TYPE_CHECKING, Any
+if TYPE_CHECKING:
+    from game import Game
+else:
+    Game = Any
 
-red_40_factory = number_card(40)
-red_40 = lambda: red_40_factory(CardColor.RED)
+
+def card(
+    penalty: int = 0,
+    card_type: str | None = None,
+    raw_name: str | None = None,
+    can_play_on_debt: bool = False,
+    number_value : int = 0,
+    rules: str | None = None
+):
+    def decorator(fun: ArgFunc[Game, Game].Inner) -> Callable[[CardColor], Card[Game]]:
+        on_play: ArgFunc[Game, Game] = ArgFunc(fun, lambda g: [], lambda g: lambda s: g)
+        on_draw: ArgFunc[Game, Game] = ArgFunc(lambda g: None, lambda g: [], lambda g: lambda s: g)
+        
+        # TODO: we probably have to turn this into a class again...
+        # idea to reduce repetition: make the CardFactory store the below function instead of all the values
+        def factory(color: CardColor) -> Card[Game]:
+            return Card(
+                color=color,
+                rules=rules or fun.__doc__ or "This card has no rules text! You should probably fix that!",
+                penalty_points=penalty,
+                number_value=number_value,
+                card_type=card_type or fun.__name__,
+                raw_name=raw_name or '%C ' + (card_type or fun.__name__).replace('_',' ').title(), # TODO: default raw_name should probably be handled by the card -cap
+                can_play_on_debt=can_play_on_debt,
+                on_play=on_play,
+                on_draw=on_draw
+            )
+        return factory
+    return decorator
+
+## arg selectors
+
+@ArgFunc.create
+def choose_player(game: Game):
+    def converter(value: str):
+        player = game.table.find_unejected_player_id(int(value))
+        if player is None:
+            raise ValueError('Selected player not found in game or was ejected.')
+        return player
+    return [str(player.id) for player in game.table.starting_with_you], converter
+
+@ArgFunc.create
+def choose_color(game: Game):
+    def converter(value: str):
+        return CardColor(int(value))
+    return [str(color.value) for color in CardColor], converter
+
+## testing cards
+
+@card()
+def skip_turn(game: Game):
+    ...
+
+@card(number_value=9999999)
+@choose_player
+def eject_player(game: Game, player: Player[Game]):
+    player.eject()
+
+@card(rules='you have to play this card')
+@choose_player
+@choose_color
+def change_player_to_color(game: Game, player: Player[Game], color: CardColor):
+    print(f'{player.display_name} is now {color.name}')
+
+## actual cards
+
+def number_card(n: int):
+    return card(
+        penalty = n,
+        number_value = n,
+        card_type = str(n),
+    )(lambda g: None) # no on_play effect
+
+red_40 = lambda: number_card(40)(CardColor.RED)
 
 @card(
-    default_penalty_points = 30,
+    penalty=30,
 )
 def color_void(game: Game):
     me = game.piles[game.active_pile].pop()
@@ -32,17 +101,17 @@ def color_void(game: Game):
 def draw_times(n: int):
     assert n >= 1
     @card(
-        default_penalty_points = 30,
-        default_card_type = f"draw_times_{n}",
-        default_raw_name = f"%c Draw {n}×",
-        default_debtstackable = True
+        penalty=30,
+        card_type=f"draw_times_{n}",
+        raw_name=f"%c Draw {n}×",
+        can_play_on_debt=True
     )
     def factory(game: Game):
         game.card_debt *= n
     return factory
 
 @card(
-    default_penalty_points = 30,
+    penalty=30,
 )
 def hand_rotate(game: Game):
     non_ejected_players = [p for p in game.table.starting_with_you]
@@ -51,7 +120,8 @@ def hand_rotate(game: Game):
     for i in range(len(non_ejected_players)):
         non_ejected_players[i].hand = hands[i]
 
-# todo: NEEDS ARGBUILDER
+
+# TODO: NEEDS ARGBUILDER
 '''
 class HandSwap(Card):
     def __init__(self, color: CardColor):
@@ -86,8 +156,9 @@ class Kissaroo(Card):
         target.hand.add_card(card)
 '''
 
+
 @card(
-    default_penalty_points = 30,
+    penalty=30,
 )
 def knight(game: Game):
     for p in game.table.starting_with_you:
@@ -96,14 +167,14 @@ def knight(game: Game):
                 p.hand.remove_card(random.choice(p.hand.cards))
 
 @card(
-    default_penalty_points = 30,
+    penalty=30,
 )
 def metadraw(game: Game):
     top_card = game.piles[game.active_pile][-2] # [-1] is always this card
     game.card_debt += top_card.number_value
 
 @card(
-    default_penalty_points = 30,
+    penalty=30,
 )
 def oopsie_daisy(game: Game):
     hand_sizes: list[int] = []
@@ -118,7 +189,7 @@ def oopsie_daisy(game: Game):
             p.hand.add_card(all_cards.pop())
 
 @card(
-    default_penalty_points = 5,
+    penalty=5,
 )
 def pile_shuffle(game: Game):
     random.shuffle(game.piles[game.active_pile])
@@ -129,22 +200,22 @@ def pot_of_greed_n(draws: int):
     card_name = f"%C {("" if draws == 2 else util.number_names.tuple_name(draws) + " ")}Pot of Greed"
 
     @card(
-        default_penalty_points = 30,
-        default_card_type = card_type,
-        default_raw_name = card_name
+        penalty=30,
+        card_type=card_type,
+        raw_name=card_name
     )
-    def factory(game: Game):
+    def on_play(game: Game):
         for _ in range(draws):
             game.active_player.hand.add_card(game.deck.draw_from_deck())
-    return factory
+    return on_play
 
 @card(
-    default_penalty_points = 20
+    penalty=20
 )
 def revelation(game: Game):
     pass # the meat of this is in hand.is_revealed()
 
-def reverse_skip_draw(reverse: bool, skips: int, draws: int) -> CardFactory[Game]:
+def reverse_skip_draw(*, reverse: bool = False, skips: int = 0, draws: int = 0):
     assert draws >= 0 and skips >= 0
     assert reverse or draws > 0 or skips > 0
 
@@ -163,12 +234,12 @@ def reverse_skip_draw(reverse: bool, skips: int, draws: int) -> CardFactory[Game
         card_name.append(f"Draw {draws}")
 
     @card(
-        default_penalty_points = 30,
-        default_card_type = "_".join(card_types),
-        default_raw_name = " ".join(card_name),
-        default_debtstackable = draws > 0,
+        penalty=30,
+        card_type="_".join(card_types),
+        raw_name=" ".join(card_name),
+        can_play_on_debt=draws > 0,
     )
-    def factory(game: Game):
+    def on_play(game: Game):
         if reverse:
             game.table.reverse_direction()
 
@@ -178,7 +249,8 @@ def reverse_skip_draw(reverse: bool, skips: int, draws: int) -> CardFactory[Game
         if draws > 0:
             game.card_debt += draws
 
-    return factory
+    return on_play
+
 
 # TODO: REQUIRES ARGBUILDER
 '''
@@ -205,7 +277,7 @@ def apply_wild(card: Card[Game], color: CardColor):
         card.raw_name = "%C " + card.raw_name
 
 
-# TODO: all wild X cards require argbuilder, but i've done a bit of the work here already
+# TODO: all wild X cards require argbuilder, but i've done a bit of the work here already - baz
 '''
 @constant_color(ALL_COLORS)
 @card(

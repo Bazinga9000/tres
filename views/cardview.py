@@ -90,9 +90,17 @@ class CardView(View):
                 if card.can_play(self.game, i)
             ]
             self.add_item(pile_select)
-
-            on_play = card.args.compile(self.game, self)
-
+            
+            def build_select(options: list[str]):
+                if options:
+                    select = BaseSelect()
+                    select.options = [SelectOption(label=opt, value=opt) for opt in options]
+                    self.add_item(select)
+                    return select.get_raw_value
+                else:
+                    return lambda: ''
+            on_play = card.on_play.compile(build_select, self.game)
+            
             async def play_callback(interaction: Interaction):
                 player = self.game.active_player
                 card = card_select.get_value()

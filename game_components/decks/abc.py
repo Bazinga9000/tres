@@ -7,7 +7,8 @@ else:
     Card = Any
 
 
-class Deck(abc.ABC):
+class Deck[T](abc.ABC):
+    type Card = Card[T]
     """
     Draw a card from this deck. Should return a unique card (different UUID) every call.
     Decks in Tres should never run out.

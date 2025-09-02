@@ -2,13 +2,15 @@ from game_components import Player, Hand
 import random
 from typing import Generator, Any, Iterator
 
-class Table:
+class Table[T]:
     '''
     Represents the list of players and their seating order.
 
     Has methods for interacting with the turn and direction of play
     '''
-
+    
+    type Player = Player[T]
+    
     def __init__(self, players: list[Player]):
 
         # Every player in the game.
@@ -17,7 +19,7 @@ class Table:
 
         # The list of players in the current round
         # This list determines the order of play.
-        self.round_participants : list[Player] = []
+        self.round_participants : list[Player[T]] = []
 
         # The index into turn_order of the player whose turn it is
         self.active_player_index = 0

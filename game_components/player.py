@@ -2,12 +2,12 @@ import discord
 from game_components.hand import Hand
 from typing import Self
 
-class Player:
+class Player[T]:
     def __init__(self, discord_user: discord.Member | discord.User):
         self.discord_user = discord_user
         self.id = discord_user.id
         self.score = 0
-        self.hand = Hand()
+        self.hand = Hand[T]()
         self.ejected = False
         self.eliminated = False
 

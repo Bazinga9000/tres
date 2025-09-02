@@ -12,12 +12,14 @@ from PIL import Image
 from game_components import Table
 
 class Game:
+    type Player = Player[Game]
+    
     def __init__(self, pregame: PreGame):
         # Overwrite the pregame with the real game
         self.uuid = pregame.uuid
         game_db.games[self.uuid] = self
 
-        self.table = Table([Player(i) for i in pregame.players])
+        self.table = Table([Player[Game](i) for i in pregame.players])
         self.channel = pregame.channel
         self.name = pregame.name
 
@@ -98,7 +100,7 @@ class Game:
         for _ in range(n):
             c = self.deck.draw_from_deck()
             player.hand.add_card(c)
-            c.on_draw(self, player)
+            #c.on_draw(self, player) # TODO: implement on_draw hook -cap
 
     async def render(self) -> Image.Image:
         '''

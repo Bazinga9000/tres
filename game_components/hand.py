@@ -11,9 +11,11 @@ else:
     Card = Any
 
 # A collection of cards in a Player's hand
-class Hand:
+class Hand[T]:
+    type Card = Card[T]
+    
     def __init__(self):
-        self.cards : list[Card] = []
+        self.cards : list[Card[T]] = []
 
     def __len__(self) -> int:
         return len(self.cards)
@@ -31,7 +33,7 @@ class Hand:
         self.cards.remove(c)
 
     def sorted(self) -> list[Card]:
-        out : list[Card] = self.cards[:]
+        out = self.cards[:]
         return sorted(out, key=lambda x: x.sort_key())
 
     def display_all_cards(self) -> str:
