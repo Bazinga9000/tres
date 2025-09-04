@@ -1,5 +1,6 @@
-import discord
 import io
+
+import discord
 from PIL import Image
 
 

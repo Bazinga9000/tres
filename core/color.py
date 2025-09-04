@@ -1,4 +1,5 @@
 from enum import Flag, auto
+from typing import override
 
 
 class CardColor(Flag):
@@ -12,12 +13,13 @@ class CardColor(Flag):
     RAINBOW = RED | ORANGE | YELLOW | GREEN | BLUE | PURPLE
     
     @property
+    @override
     def name(self) -> str:
         return (super().name or 'Unobtanium').title()
     
     @property
     def article(self) -> str:
         '''
-        Returns the definite or indefinite article to use with this color.
+        Returns the indefinite article to use with this color.
         '''
         return "an" if self.name[0].lower() in "aeiou" else "a"

@@ -92,8 +92,8 @@ def metadraw(game: Game):
     penalty=30,
 )
 def oopsie_daisy(game: Game):
-    hand_sizes: list[int] = []
-    all_cards: list[Card[Game]] = []
+    hand_sizes = list[int]()
+    all_cards = list[Card[Game]]()
     for p in game.table.starting_with_you:
         hand_sizes.append(len(p.hand))
         all_cards.extend(p.hand)
@@ -134,8 +134,8 @@ def reverse_skip_draw(*, reverse: bool = False, skips: int = 0, draws: int = 0):
     assert draws >= 0 and skips >= 0
     assert reverse or draws > 0 or skips > 0
 
-    card_types: list[str] = []
-    card_name: list[str] = ["%C"]
+    card_types = list[str]()
+    card_name = ["%C"]
     if reverse:
         card_types.append("reverse")
         card_name.append("Reverse")

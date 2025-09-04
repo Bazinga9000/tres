@@ -42,3 +42,11 @@ class Player[T]:
         '''
         self.ejected = True
         self.score += self.hand.penalty_value()
+    
+    def reset(self):
+        '''
+        Reset this player for a new round.
+        '''
+        
+        self.ejected = False
+        self.hand.clear()

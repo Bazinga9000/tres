@@ -30,34 +30,22 @@ class Card[T]:
     
     def render(self) -> Image.Image:
         assets_location = "assets"
-        backs_location = f"{assets_location}/card_backs"
         
-        match self.color:
-            case CardColor.RED:
-                card_back = f"{backs_location}/red.png"
-            case CardColor.ORANGE:
-                card_back = f"{backs_location}/orange.png"
-            case CardColor.YELLOW:
-                card_back = f"{backs_location}/yellow.png"
-            case CardColor.GREEN:
-                card_back = f"{backs_location}/green.png"
-            case CardColor.BLUE:
-                card_back = f"{backs_location}/blue.png"
-            case CardColor.PURPLE:
-                card_back = f"{backs_location}/purple.png"
-            case _:
-                card_back = f"{backs_location}/wild.png"
-
+        backs_location = f"{assets_location}/card_backs"
+        card_back = f"{backs_location}/{self.color.name.lower()}.png"
+        if not os.path.isfile(card_back):
+            card_back = f"{backs_location}/wild.png"
+        
         symbols_location = f"{assets_location}/symbols"
         symbol = f"{symbols_location}/{self.card_type}.png"
         if not os.path.isfile(symbol):
             symbol = f"{symbols_location}/placeholder.png"
-
+        
         return util.image_util.compose_files([card_back, symbol])
-
+    
     def sort_key(self) -> list[int]:
-        key : list[int] = []
-
+        key = list[int]()
+        
         # first, sort by color
         match self.color:
             # Monocolored cards always go first
@@ -77,7 +65,7 @@ class Card[T]:
                 # TODO: more intelligent sorting of non-rainbow multicolored cards
                 # this will, at least, put rainbow (all colors) last
                 key.append(c.value + 7)
-
+        
         # within each color, number cards are always first
         try:
             key.extend([0, int(self.card_type)])
@@ -89,12 +77,12 @@ class Card[T]:
             key.append(self.penalty_points)
             # if penalty points are the same, give up and just use the hash
             key.append(hash(self.card_type))
-
+        
         # always break ties by the uuid
         key.append(int(self.uuid))
-
+        
         return key
-
+    
     @property
     def display_name(self) -> str:
         # TODO: do this in a nicer way, please

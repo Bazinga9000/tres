@@ -11,6 +11,8 @@ from core import ArgumentBase
 from typing import TYPE_CHECKING, Any, override
 
 if TYPE_CHECKING:
+    # TODO: this circular import was unavoidable because Game's logic is tied to discord
+    # we should decouple game logic from ui -cap
     from game import Game
 else:
     Game = Any
@@ -52,11 +54,11 @@ class CardView(View):
         self.update_card_select()
 
     def update_card_select(self, *, selected: list[str] | None = None):
-        # TODO: this is code duplication from argbuilder because there are no longer reusable classes for selects
+        # TODO: this is code duplication from argfunc because there are no longer reusable classes for selects
         def converter(value: str):
             card = self.game.active_player.hand.lookup_card(UUID(value))
             if not card:
-                raise ValueError("Selected card index out of range.")
+                raise ValueError('Selected card index out of range.')
             return card
         card_select = TypedSelect(converter)
         card_select.placeholder = 'Choose a card to play.'

@@ -5,7 +5,7 @@ from game import Game
 
 
 def make_test_deck() -> list[Card[Game]]:
-    out: list[Card[Game]] = []
+    out = list[Card[Game]]()
 
     for c in [CardColor.RED, CardColor.ORANGE, CardColor.YELLOW, CardColor.GREEN, CardColor.BLUE, CardColor.PURPLE]:
         for n in range(0,16):

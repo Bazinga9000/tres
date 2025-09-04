@@ -11,7 +11,7 @@ from views.cardview import CardView
 
 from typeutils import AF
 
-
+# TODO: decouple this from game ui and move to core
 class Game:
     type Card = Card[Game]
     type Player = Player[Game]
@@ -123,10 +123,10 @@ class Game:
         This is async because it gets player asset data.
         '''
 
-        player_images : list[Image.Image] = []
+        player_images = list[Image.Image]()
 
         for p in self.table.turn_order:
-            p_img : list[Image.Image] = []
+            p_img = list[Image.Image]()
             if self.table.direction_of_play == 1:
                 p_img.append(util.image_util.open_rgba("assets/ui/arrow_down.png"))
             else:

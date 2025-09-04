@@ -9,11 +9,11 @@ class EventHandler[**P]:
     func: Action[P]
     
     def __repr__(self):
-        return f"EventHandler({self.func.__name__})"
+        return f'EventHandler({self.func.__name__})'
 
 class Event[**P]:
     def __init__(self, func: Action[P] | None = None):
-        self._handlers: list[EventHandler[P]] = list()
+        self._handlers = list[EventHandler[P]]()
         self += func
     
     def subscribe(self, func: Action[P]) -> EventHandler[P]:
@@ -32,7 +32,7 @@ class Event[**P]:
             try:
                 handler.func(*args, **kwargs)
             except Exception as e:
-                print(f"Error in event handler {handler}: {e}")
+                print(f'Error in event handler {handler}: {e}')
     
     def __call__(self, *args: P.args, **kwargs: P.kwargs):
         self.fire(*args, **kwargs)
