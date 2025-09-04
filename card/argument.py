@@ -21,3 +21,8 @@ class Argument[T](ArgumentBase):
         if self.default is None:
             raise ValueError(f'Invalid argument: "{id}"')
         return self.default
+    
+    type Self[S] = Argument[S]
+    @staticmethod
+    def get_seed[S](seed: S) -> Self[S]:
+        return Argument(placeholder='', options=(), default=seed)

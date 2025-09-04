@@ -1,6 +1,5 @@
-from functools import wraps
-
 from .argument import Argument, ArgumentBase
+from util.decorators import decorates
 
 from typing import Callable, Concatenate
 from typeutils import F, Factory
@@ -38,12 +37,8 @@ class ArgFunc[S, *Ts, T]:
             ret = callback(hooks(argument))
         return ret[1]
     
-    # TODO: what if i import @decorates... -cap
+    type Creator[SS, *TTs, TT, X] = F[[ArgFunc[SS, *TTs, TT].Inner[X]], ArgFunc[SS, *TTs, TT]]
+    @decorates
     @staticmethod
-    def create[SS, TT, **P](func: F[Concatenate[SS, P], Argument[TT]]):
-        @wraps(func)
-        def wrapper[*TTs, X](*args: P.args, **kwargs: P.kwargs) -> F[[ArgFunc[SS, *TTs, TT].Inner[X]], ArgFunc[SS, *TTs, TT]]:
-            def decorator(inner: ArgFunc[SS, *TTs, TT].Inner[X]) -> ArgFunc[SS, *TTs, TT]:
-                return ArgFunc(inner, lambda seed: func(seed, *args, **kwargs))
-            return decorator
-        return wrapper
+    def create[SS, *TTs, TT, X, **P](func: F[Concatenate[SS, P], Argument[TT]], *args: P.args, **kwargs: P.kwargs) -> Creator[SS, *TTs, TT, X]:
+        return lambda inner: ArgFunc(inner, lambda seed: func(seed, *args, **kwargs))

@@ -1,5 +1,4 @@
 import random
-from functools import wraps
 
 import util.number_names
 from .argfunc import ArgFunc
@@ -8,9 +7,10 @@ from .card import Card
 from .color import ALL_COLORS, CardColor
 from .option import Option
 from game_components.player import Player
+from util.decorators import decorates
 
 from typing import TYPE_CHECKING, Any
-from typeutils import F, Factory
+from typeutils import F
 
 if TYPE_CHECKING:
     from game import Game
@@ -25,7 +25,8 @@ def card(
     can_play_on_debt: bool = False,
     number_value : int = 0,
     rules: str | None = None
-): # TODO: ParamSpec this for things like number cards -cap
+):
+    # we can't directly use @decorates here because fun isn't necessarily a function TODO: you know what would be really funny...
     def decorator(fun: ArgFunc[Game, Game].Inner) -> F[[CardColor], Card[Game]]:
         get_game: F[[Game], Argument[Game]] = lambda g: Argument(placeholder='', options=(), default=g)
         on_play = ArgFunc(fun, get_game)
@@ -151,6 +152,7 @@ def hand_rotate(game: Game):
 @choose_player(skip_self=True)
 def hand_swap(game: Game, target: Player[Game]): # TODO: type Player = Player[Game]?
     game.active_player.hand, target.hand = target.hand, game.active_player.hand
+
 
 @card(
     penalty=50
@@ -278,12 +280,10 @@ def apply_wild(game: Game, color: CardColor):
 
 
 def constant_color(color: CardColor):
-    def decorator(fun: F[[CardColor], Card[Game]]) -> Factory[Card[Game]]:
-        @wraps(fun)
-        def wrapper():
-            return fun(color)
-        return wrapper
-    return decorator
+    @decorates
+    def wrapper(fun: F[[CardColor], Card[Game]]):
+        return fun(color)
+    return wrapper
 
 @constant_color(ALL_COLORS)
 @card(
