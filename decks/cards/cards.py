@@ -192,7 +192,7 @@ def constant_color(color: CardColor):
         return fun(color)
     return wrapper
 
-@constant_color(CardColor.rainbow())
+@constant_color(CardColor.RAINBOW)
 @card(
     penalty=50,
     raw_name="Wild"
@@ -202,7 +202,7 @@ def wild(game: Game, color: CardColor):
     apply_wild(game, color)
 
 
-@constant_color(CardColor.rainbow())
+@constant_color(CardColor.RAINBOW)
 @card(
     penalty = 50,
     raw_name = "Wild Color Magnet"
@@ -220,7 +220,7 @@ def wild_color_magnet(game: Game, color: CardColor):
 
 def wild_draw_n(n: int):
     assert n >= 0
-    @constant_color(CardColor.rainbow())
+    @constant_color(CardColor.RAINBOW)
     @card(
         penalty = 50,
         card_type = f"wild_draw_{n}",
@@ -233,7 +233,7 @@ def wild_draw_n(n: int):
     return on_play
 
 def wild_number(n: int):
-    @constant_color(CardColor.rainbow())
+    @constant_color(CardColor.RAINBOW)
     @card(
         penalty = n,
         number_value = n,

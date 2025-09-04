@@ -99,7 +99,7 @@ class Card[T]:
     def display_name(self) -> str:
         # TODO: do this in a nicer way, please
         return self.raw_name.replace(
-            "%C", self.color.display_name
+            "%C", self.color.name
         ).replace(
             "%A", self.color.article.title()
         )
