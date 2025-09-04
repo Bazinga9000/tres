@@ -6,8 +6,7 @@ from PIL import Image
 
 import game_db
 import util.image_util
-from core.cards import Card, Deck
-from core.players import Player, Table
+from core import Card, Deck, Player, Table
 from views.cardview import CardView
 
 from typeutils import AF

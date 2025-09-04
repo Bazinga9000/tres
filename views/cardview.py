@@ -6,7 +6,7 @@ from discord.ui import Button, Item, View
 
 from .select.base import BaseSelect
 from .select.typed import TypedSelect
-from core.cards import ArgumentBase
+from core import ArgumentBase
 
 from typing import TYPE_CHECKING, Any, override
 

@@ -2,8 +2,7 @@ import random
 
 from .args import choose_card, choose_color, choose_player
 from .card import card
-from core.cards import Card, CardColor
-from core.players.player import Player
+from core import Card, CardColor, Player
 from game import Game
 from util.decorators import decorates
 from util.number_names import tuple_name

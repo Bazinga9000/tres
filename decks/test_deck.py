@@ -1,6 +1,6 @@
 from .cards import cards
 from .fixed_shoe import FixedShoe
-from core.cards import Card, CardColor
+from core import Card, CardColor
 from game import Game
 
 

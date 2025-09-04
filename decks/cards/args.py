@@ -1,4 +1,4 @@
-from core.cards import ArgFunc, Argument, CardColor, Option
+from core import ArgFunc, Argument, CardColor, Option
 from game import Game
 
 

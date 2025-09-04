@@ -1,6 +1,6 @@
 import random
 
-from core.cards import Card, Deck
+from core import Card, Deck
 
 from typing import override
 from typeutils import Factory

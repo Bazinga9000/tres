@@ -4,8 +4,8 @@ import discord
 
 import game
 import game_db
-from core.players import Player, Table
-from game_components.decks.test_deck import TestDeck
+from core import Player, Table
+from decks import TestDeck
 
 from typing import Self
 

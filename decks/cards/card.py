@@ -1,4 +1,4 @@
-from core.cards import ArgFunc, Argument, Card, CardColor
+from core import ArgFunc, Argument, Card, CardColor
 from game import Game
 
 from typeutils import F

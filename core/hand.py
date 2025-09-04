@@ -4,7 +4,7 @@ import discord
 from PIL import Image
 
 import util.image_util
-from core.cards import Card
+from .card import Card
 
 
 class Hand[T]:
