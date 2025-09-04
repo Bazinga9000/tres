@@ -1,17 +1,15 @@
 import uuid
-from typing import TYPE_CHECKING, Any
-from PIL import Image
-import util.image_util
+
 import discord
+from PIL import Image
 
-# yet another circular dependency
-if TYPE_CHECKING:
-    from card import Card
-else:
-    Card = Any
+import util.image_util
+from core.cards import Card
 
-# A collection of cards in a Player's hand
+
 class Hand[T]:
+    '''A collection of cards in a player's hand.'''
+    
     type Card = Card[T]
     
     def __init__(self):

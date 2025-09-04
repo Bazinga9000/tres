@@ -1,6 +1,9 @@
 import discord
-from game_components.hand import Hand
+
+from .hand import Hand
+
 from typing import Self
+
 
 class Player[T]:
     def __init__(self, discord_user: discord.Member | discord.User):

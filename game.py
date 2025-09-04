@@ -1,58 +1,74 @@
 import io
+from uuid import UUID
 
 import discord
 from PIL import Image
 
-import game_components.decks as decks
 import game_db
 import util.image_util
-from game_components import Player, Table
-from pregame import PreGame
+from core.cards import Card, Deck
+from core.players import Player, Table
 from views.cardview import CardView
 
 from typeutils import AF
 
 
 class Game:
+    type Card = Card[Game]
     type Player = Player[Game]
+    type Deck = Deck[Game]
+    type Table = Table[Game]
     
-    def __init__(self, pregame: PreGame):
+    def __init__(self, uuid: UUID, table: Table, channel: discord.TextChannel, name: str, deck: Deck):
         # Overwrite the pregame with the real game
-        self.uuid = pregame.uuid
+        self.uuid = uuid
         game_db.games[self.uuid] = self
-
-        self.table = Table([Player[Game](i) for i in pregame.players])
-        self.channel = pregame.channel
-        self.name = pregame.name
-
+        
+        self.table = table
+        self.channel = channel
+        self.name = name
+        
         # Set up game
         self.round = 1
         self.turn = 1
         self.table.populate_round()
-
-        # TODO: more robust deck implementation (for e.g procedural deck)
-        self.deck = decks.TestDeck()
-
+        
+        self.deck = deck
+        
         for p in self.table.turn_order:
             for _ in range(7):
                 p.hand.add_card(self.deck.draw_from_deck())
-
+        
         self.piles = [[self.deck.draw_from_deck()]]
-
+        
         # Card Debt = cards that must be drawn by the next player in lieu of taking a turn
         self.card_debt = 0
-
+        
         # TODO: hook this into the argfunc
         self.active_pile = -1
-
+    
     @property
     def active_player(self):
         return self.table.active_player
-
+    
+    # TODO: hookify this
+    def can_play(self, card: Card, pile_index: int):
+        '''Checks whether or not a card can be played on a given pile. Defaults to standard UNO rules (at least one matching color OR matching card type).'''
+        
+        top_card = self.piles[pile_index][-1]
+        if self.card_debt > 0 and not card.can_play_on_debt:
+            return False
+        return bool(top_card.color & card.color) or card.card_type == top_card.card_type
+    
+    def playable_piles(self, card: Card):
+        '''Returns a list of piles that a card can be played on.'''
+        
+        return [i for i in range(len(self.piles)) if self.can_play(card, i)]
+    
     # Called at the start of a game
     async def on_start(self):
         await self.start_turn()
-
+    
     # Sends the message signalling the start of a new turn
     async def start_turn(self):
         # Generate the embed
@@ -61,23 +77,20 @@ class Game:
             description=f"Turn {self.turn}",
             color=discord.Colour.blurple(),
         )
-
+        
         # Turn order graphic (text for now)
         e.add_field(name="Turn Order", value=self.table.turn_order_text())
-
+        
         # e.add_field(name="Top Card", value=self.piles[0][-1].display_name)
-
+        
         e.add_field(name="Card Debt", value=str(self.card_debt))
-
+        
         game_state_image = await self.render()
         await self.channel.send(
             embed = e,
             view = TurnStarterView(self),
             files=[util.image_util.as_discord_file(game_state_image, "game_state.png")])
-
-
-
-
+    
     # Performs cleanup at the end of a turn and then starts the next turn if needed
     async def end_turn(self):
         if len(self.active_player.hand) == 0:

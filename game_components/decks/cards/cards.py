@@ -1,109 +1,17 @@
 import random
 
-import util.number_names
-from .argfunc import ArgFunc
-from .argument import Argument
-from .card import Card
-from .color import ALL_COLORS, CardColor
-from .option import Option
-from game_components.player import Player
+from .args import choose_card, choose_color, choose_player
+from .card import card
+from core.cards import Card, CardColor
+from core.players.player import Player
+from game import Game
 from util.decorators import decorates
+from util.number_names import tuple_name
 
-from typing import TYPE_CHECKING, Any
 from typeutils import F
 
-if TYPE_CHECKING:
-    from game import Game
-else:
-    Game = Any
 
-
-def card(
-    penalty: int = 0,
-    card_type: str | None = None,
-    raw_name: str | None = None,
-    can_play_on_debt: bool = False,
-    number_value : int = 0,
-    rules: str | None = None
-):
-    # we can't directly use @decorates here because fun isn't necessarily a function TODO: you know what would be really funny...
-    def decorator(fun: ArgFunc[Game, Game].Inner) -> F[[CardColor], Card[Game]]:
-        get_game: F[[Game], Argument[Game]] = lambda g: Argument(placeholder='', options=(), default=g)
-        on_play = ArgFunc(fun, get_game)
-        on_draw = ArgFunc(lambda g: None, get_game)
-        
-        # TODO: we probably have to turn this into a class again...
-        # idea to reduce repetition: make the CardFactory store the below function instead of all the values
-        def wrapper(color: CardColor) -> Card[Game]:
-            return Card(
-                color=color,
-                rules=rules or fun.__doc__ or "This card has no rules text! You should probably fix that!",
-                penalty_points=penalty,
-                number_value=number_value,
-                card_type=card_type or fun.__name__,
-                raw_name=raw_name or '%C ' + (card_type or fun.__name__).replace('_',' ').title(), # TODO: default raw_name should probably be handled by the card -cap
-                can_play_on_debt=can_play_on_debt,
-                on_play=on_play,
-                on_draw=on_draw
-            )
-        # we can't directly use wraps here because fun isn't necessarily a function
-        wrapper.__name__ = fun.__name__
-        wrapper.__doc__ = fun.__doc__
-        wrapper.__module__ = fun.__module__
-        wrapper.__qualname__ = fun.__qualname__
-        wrapper.__annotations__ = fun.__annotations__
-        
-        return wrapper
-    return decorator
-
-## arg selectors
-
-@ArgFunc.create
-def choose_player(game: Game, placeholder: str = 'Choose a player.', * , skip_self: bool = False):
-    return Argument(
-        placeholder=placeholder,
-        options=tuple(
-            Option(
-                name=player.display_name,
-                id=str(player.id),
-                value=player
-            )
-            for player in game.table.starting_with_you
-            if not (skip_self and player == game.active_player)
-        )
-    )
-
-@ArgFunc.create
-def choose_color(game: Game, placeholder: str = 'Choose a color.', ):
-    return Argument(
-        placeholder=placeholder,
-        options=tuple(
-            Option(
-                name=(color.name or '???').title(),
-                id=str(color.value),
-                value=color
-            )
-            for color in CardColor
-        )
-    )
-
-@ArgFunc.create
-def choose_card(game: Game, *, requires_playable: bool = False):
-    # TODO: is there a way to prevent the same card from being selected?
-    return Argument(
-        placeholder='Choose a card.',
-        options=tuple(
-            Option(
-                name=card.display_name,
-                id=str(card.uuid),
-                value=card
-            )
-            for card in game.active_player.hand.sorted()
-            if card.can_play(game, game.active_pile) or not requires_playable
-        )
-    )
-
-## cards
+# TODO: split these up into multiple files
 
 def number_card(n: int):
     return card(
@@ -205,7 +113,7 @@ def pile_shuffle(game: Game):
 def pot_of_greed_n(draws: int):
     assert draws >= 0
     card_type = "pot_of_greed" + ("" if draws == 2 else f"_{draws}")
-    card_name = f"%C {("" if draws == 2 else util.number_names.tuple_name(draws) + " ")}Pot of Greed"
+    card_name = f"%C {("" if draws == 2 else tuple_name(draws) + " ")}Pot of Greed"
 
     @card(
         penalty=30,
@@ -235,7 +143,7 @@ def reverse_skip_draw(*, reverse: bool = False, skips: int = 0, draws: int = 0):
     if skips > 0:
         card_types.append(f"skip_{skips}")
         if skips > 1:
-            card_name.append(util.number_names.tuple_name(skips))
+            card_name.append(tuple_name(skips))
         card_name.append("Skip")
     if draws > 0:
         card_types.append(f"draw_{draws}")
@@ -285,7 +193,7 @@ def constant_color(color: CardColor):
         return fun(color)
     return wrapper
 
-@constant_color(ALL_COLORS)
+@constant_color(CardColor.rainbow())
 @card(
     penalty=50,
     raw_name="Wild"
@@ -295,7 +203,7 @@ def wild(game: Game, color: CardColor):
     apply_wild(game, color)
 
 
-@constant_color(ALL_COLORS)
+@constant_color(CardColor.rainbow())
 @card(
     penalty = 50,
     raw_name = "Wild Color Magnet"
@@ -313,7 +221,7 @@ def wild_color_magnet(game: Game, color: CardColor):
 
 def wild_draw_n(n: int):
     assert n >= 0
-    @constant_color(ALL_COLORS)
+    @constant_color(CardColor.rainbow())
     @card(
         penalty = 50,
         card_type = f"wild_draw_{n}",
@@ -326,7 +234,7 @@ def wild_draw_n(n: int):
     return on_play
 
 def wild_number(n: int):
-    @constant_color(ALL_COLORS)
+    @constant_color(CardColor.rainbow())
     @card(
         penalty = n,
         number_value = n,

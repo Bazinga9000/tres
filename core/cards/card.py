@@ -5,16 +5,8 @@ from dataclasses import dataclass, field
 from PIL import Image
 
 from .argfunc import ArgFunc
-from card.color import CardColor
+from .color import CardColor
 import util.image_util
-
-from typing import TYPE_CHECKING, Any
-
-# TODO: this solves circular dependency, but it's probably better to just refactor so that the type doesn't exist in the first place -cap
-if TYPE_CHECKING:
-    from game import Game
-else:
-    Game = Any
 
 
 @dataclass
@@ -28,33 +20,18 @@ class Card[T]:
     raw_name: str # the pre-formatted display name
 
     # hooks
-    # TODO: actually hook the hook
+    # TODO: actually hook the draw hook
     type CardFunc = ArgFunc[T, T]
     on_play: CardFunc
     on_draw: CardFunc
     
     # autogenerate UUID
     uuid: UUID = field(default_factory=uuid4)
-
-    # Checks whether this card can be played on a given pile
-    # Defaults to standard UNO rules (at least one matching color OR matching card type)
-    # TODO: hookify this
-    def can_play(self, game: Game, pile_index: int):
-        # TODO: these and the other methods which reference Game should be moved to Game imo -cap
-        top_card = game.piles[pile_index][-1]
-        if game.card_debt > 0 and not self.can_play_on_debt:
-            return False
-        return bool(top_card.color & self.color) or self.card_type == top_card.card_type
-
-    def playable_piles(self, game: Game):
-        '''Returns a list of piles that this card can be played on.'''
-
-        return [i for i in range(len(game.piles)) if self.can_play(game, i)]
-
+    
     def render(self) -> Image.Image:
         assets_location = "assets"
         backs_location = f"{assets_location}/card_backs"
-
+        
         match self.color:
             case CardColor.RED:
                 card_back = f"{backs_location}/red.png"

@@ -8,7 +8,7 @@ class CardColor(Flag):
     GREEN = auto()
     BLUE = auto()
     PURPLE = auto()
-
+    
     @property
     def display_name(self) -> str:
         '''
@@ -23,9 +23,9 @@ class CardColor(Flag):
             CardColor.PURPLE: "Purple"
         }
 
-        if self == NO_COLORS:
+        if self == self.devoid():
             return "Devoid" # TODO: decide what to call this
-        if self == ALL_COLORS:
+        if self == self.rainbow():
             return "Rainbow" # TODO: decide what to call THIS
         else:
             return "/".join(v for (k,v) in color_names.items() if k in self)
@@ -36,6 +36,11 @@ class CardColor(Flag):
         Returns the definite or indefinite article to use with this color.
         '''
         return "an" if self.display_name[0].lower() in "aeiou" else "a"
-
-NO_COLORS = CardColor(0)
-ALL_COLORS = CardColor.RED | CardColor.ORANGE | CardColor.YELLOW | CardColor.GREEN | CardColor.BLUE | CardColor.PURPLE
+    
+    @classmethod
+    def devoid(cls):
+        return cls(0)
+    
+    @classmethod
+    def rainbow(cls):
+        return cls.RED | cls.ORANGE | cls.YELLOW | cls.GREEN | cls.BLUE | cls.PURPLE

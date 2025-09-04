@@ -1,6 +1,7 @@
 import random
 
-from game_components import Player, Hand
+from .hand import Hand
+from .player import Player
 
 from typing import Iterator
 from typeutils import G
@@ -40,6 +41,7 @@ class Table[T]:
         for p in self.all_players:
             p.ejected = False
             p.hand = Hand()
+            # TODO: player class should handle this
 
         self.round_participants = [p for p in self.all_players if not p.eliminated]
         self.direction_of_play = 1

@@ -6,7 +6,7 @@ from discord.ui import Button, Item, View
 
 from .select.base import BaseSelect
 from .select.typed import TypedSelect
-from card.argument import ArgumentBase
+from core.cards import ArgumentBase
 
 from typing import TYPE_CHECKING, Any, override
 
@@ -67,7 +67,7 @@ class CardView(View):
                 default=str(card.uuid) in (selected or [])
             )
             for card in self.game.active_player.hand.sorted()
-            if card.playable_piles(self.game)
+            if self.game.playable_piles(card)
         ]
 
         async def card_callback(interaction: Interaction):
@@ -89,7 +89,7 @@ class CardView(View):
             pile_select.options = [
                 SelectOption(label=f'Pile #{i + 1}', value=str(i))
                 for i in range(len(self.game.piles))
-                if card.can_play(self.game, i)
+                if self.game.can_play(card, i)
             ]
             self.add_item(pile_select)
             

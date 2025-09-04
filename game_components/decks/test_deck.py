@@ -1,14 +1,8 @@
+from .cards import cards
 from .fixed_shoe import FixedShoe
-from card import Card, CardColor
-import card.cards as cards
+from core.cards import Card, CardColor
+from game import Game
 
-from typing import TYPE_CHECKING, Any
-
-# TODO: this probably shouldn't be with the deck infrastructure
-if TYPE_CHECKING:
-    from game import Game
-else:
-    Game = Any
 
 def make_test_deck() -> list[Card[Game]]:
     out: list[Card[Game]] = []

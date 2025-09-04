@@ -1,8 +1,14 @@
-from typing import Self
-import discord
 import uuid
-import game_db
+
+import discord
+
 import game
+import game_db
+from core.players import Player, Table
+from game_components.decks.test_deck import TestDeck
+
+from typing import Self
+
 
 class PreGame(discord.ui.View):
     def __init__(self, host: discord.User | discord.Member, channel: discord.TextChannel, name: str | None):
@@ -51,7 +57,7 @@ class PreGame(discord.ui.View):
             return await interaction.respond("You can't start a game with zero players in it!", ephemeral=True)
 
         # Generate a full game from this pregame (the init will automatically overwrite the DB)
-        started_game = game.Game(self)
+        started_game = game.Game(self.uuid, Table([Player(x) for x in self.players]), self.channel, self.name, TestDeck())
         self.disable_all_items()
         await interaction.edit(embed=self.info_embed(), view=self)
         await started_game.on_start()
