@@ -1,16 +1,16 @@
 import random
+from functools import wraps
+
+import util.number_names
+from .argfunc import ArgFunc
 from .argument import Argument
+from .card import Card
+from .color import ALL_COLORS, CardColor
 from .option import Option
 from game_components.player import Player
-from .argfunc import ArgFunc
-from typing import Callable
-from .color import ALL_COLORS, CardColor
-from .abc import Card
-import util.number_names
-# TODO: clean up imports -cap
-# TODO: lots of functools.wraps missing -caps
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Callable, Any
+
 if TYPE_CHECKING:
     from game import Game
 else:
@@ -32,7 +32,7 @@ def card(
         
         # TODO: we probably have to turn this into a class again...
         # idea to reduce repetition: make the CardFactory store the below function instead of all the values
-        def factory(color: CardColor) -> Card[Game]:
+        def wrapper(color: CardColor) -> Card[Game]:
             return Card(
                 color=color,
                 rules=rules or fun.__doc__ or "This card has no rules text! You should probably fix that!",
@@ -44,7 +44,14 @@ def card(
                 on_play=on_play,
                 on_draw=on_draw
             )
-        return factory
+        # we can't directly use wraps here because fun isn't necessarily a function
+        wrapper.__name__ = fun.__name__
+        wrapper.__doc__ = fun.__doc__
+        wrapper.__module__ = fun.__module__
+        wrapper.__qualname__ = fun.__qualname__
+        wrapper.__annotations__ = fun.__annotations__
+        
+        return wrapper
     return decorator
 
 ## arg selectors
@@ -271,6 +278,7 @@ def apply_wild(game: Game, color: CardColor):
 
 def constant_color(color: CardColor):
     def decorator(fun: Callable[[CardColor], Card[Game]]) -> Callable[[], Card[Game]]:
+        @wraps(fun)
         def wrapper():
             return fun(color)
         return wrapper
@@ -299,7 +307,7 @@ def wild_color_magnet(game: Game, color: CardColor):
         c = game.deck.draw_from_deck()
         next.hand.add_card(c)
 
-        if c.color == color: # todo: should this be an exact match?
+        if c.color == color: # TODO: should this be an exact match?
             break
 
 def wild_draw_n(n: int):

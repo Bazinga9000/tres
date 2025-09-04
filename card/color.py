@@ -1,5 +1,6 @@
 from enum import Flag, auto
 
+
 class CardColor(Flag):
     RED = auto()
     ORANGE = auto()
@@ -23,9 +24,9 @@ class CardColor(Flag):
         }
 
         if self == NO_COLORS:
-            return "Devoid" # todo: decide what to call this
+            return "Devoid" # TODO: decide what to call this
         if self == ALL_COLORS:
-            return "Rainbow" # todo: decide what to call THIS
+            return "Rainbow" # TODO: decide what to call THIS
         else:
             return "/".join(v for (k,v) in color_names.items() if k in self)
 

@@ -28,7 +28,7 @@ class Game:
         self.turn = 1
         self.table.populate_round()
 
-        # todo more robust deck implementation (for e.g procedural deck)
+        # TODO: more robust deck implementation (for e.g procedural deck)
         self.deck = decks.TestDeck()
 
         for p in self.table.turn_order:
@@ -40,7 +40,7 @@ class Game:
         # Card Debt = cards that must be drawn by the next player in lieu of taking a turn
         self.card_debt = 0
 
-        # todo: hook this into the argbuilder
+        # TODO: hook this into the argfunc
         self.active_pile = -1
 
     @property
@@ -88,7 +88,7 @@ class Game:
             self.turn = 1
             game_db.games[self.uuid] = None # End the game (that is, remove it from the database)
             await self.channel.send(f"The game is over! **{self.active_player.display_name}** has won!")
-            # todo - sort this
+            # TODO: sort this
             await self.channel.send(f"**Final Scores**\n{'\n'.join(f"{p.display_name} - {p.score} points" for p in self.table.all_players)}")
         else:
             self.table.tick()

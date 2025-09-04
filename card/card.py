@@ -1,25 +1,20 @@
-# TODO: this being named abc doesn't make sense anymore -cap
-
-from typing import TYPE_CHECKING, Any
-from uuid import UUID, uuid4
 import os.path
-import util.image_util
-
+from uuid import UUID, uuid4
 from dataclasses import dataclass, field
 
-
-from card.color import CardColor
 from PIL import Image
+
 from .argfunc import ArgFunc
+from card.color import CardColor
+import util.image_util
+
+from typing import TYPE_CHECKING, Any
 
 # TODO: this solves circular dependency, but it's probably better to just refactor so that the type doesn't exist in the first place -cap
 if TYPE_CHECKING:
     from game import Game
 else:
     Game = Any
-    CardArg = Any
-    CardView = Any
-    Player = Any
 
 
 @dataclass
@@ -43,7 +38,7 @@ class Card[T]:
 
     # Checks whether this card can be played on a given pile
     # Defaults to standard UNO rules (at least one matching color OR matching card type)
-    # todo: hookify this
+    # TODO: hookify this
     def can_play(self, game: Game, pile_index: int):
         # TODO: these and the other methods which reference Game should be moved to Game imo -cap
         top_card = game.piles[pile_index][-1]
@@ -102,7 +97,7 @@ class Card[T]:
             case CardColor.PURPLE:
                 key.append(6)
             case c:
-                # todo: more intelligent sorting of non-rainbow multicolored cards
+                # TODO: more intelligent sorting of non-rainbow multicolored cards
                 # this will, at least, put rainbow (all colors) last
                 key.append(c.value + 7)
 
@@ -112,7 +107,7 @@ class Card[T]:
         except:
             # card type isn't a bare integer
             key.append(1)
-            # todo: change this later, i guess?
+            # TODO: change this later, i guess?
             # sort by penalty points, highest last
             key.append(self.penalty_points)
             # if penalty points are the same, give up and just use the hash
@@ -125,7 +120,7 @@ class Card[T]:
 
     @property
     def display_name(self) -> str:
-        # todo: do this in a nicer way, please
+        # TODO: do this in a nicer way, please
         return self.raw_name.replace(
             "%C", self.color.display_name
         ).replace(

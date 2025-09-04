@@ -1,6 +1,9 @@
-from typing import Callable, Concatenate
-from .argument import Argument, ArgumentBase
 from functools import wraps
+
+from .argument import Argument, ArgumentBase
+
+from typing import Callable, Concatenate
+
 
 # TODO: make these typing aliases more global
 type F[**P, T] = Callable[P, T]
@@ -11,6 +14,9 @@ class ArgFunc[S, *Ts, T]:
     def __init__[X](self, inner: Inner[X], arg_factory: F[[S], Argument[T]]):
         self.__name__ = inner.__name__
         self.__doc__ = inner.__doc__
+        self.__qualname__ = inner.__qualname__
+        self.__module__ = inner.__module__
+        self.__annotations__ = inner.__annotations__
         self.inner = inner
         self.arg_factory = arg_factory
         # i would like to make this a dataclass but i don't think you can capture the generic X -cap
@@ -33,7 +39,6 @@ class ArgFunc[S, *Ts, T]:
         while ret[0] is not None:
             argument, callback = ret
             ret = callback(hooks(argument))
-            print(ret)
         return ret[1]
     
     # TODO: what if i import @decorates... -cap
