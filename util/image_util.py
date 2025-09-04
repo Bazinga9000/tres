@@ -1,6 +1,7 @@
-from PIL import Image
 import discord
 import io
+from PIL import Image
+
 
 def open_rgba(file: str) -> Image.Image:
     out = Image.open(file)

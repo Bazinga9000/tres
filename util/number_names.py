@@ -15,6 +15,6 @@ def tuple_name(n: int):
             "Octuple",
             "Nonuple",
             "Dectuple"
-            ][n-1]
+        ][n-1]
     else:
         return f"{n}-fold"

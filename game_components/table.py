@@ -1,6 +1,10 @@
-from game_components import Player, Hand
 import random
-from typing import Generator, Any, Iterator
+
+from game_components import Player, Hand
+
+from typing import Iterator
+from typeutils import G
+
 
 class Table[T]:
     '''
@@ -143,7 +147,7 @@ class Table[T]:
         return self.round_participants.__iter__()
 
 
-    def round_participants_iter(self, offset: int) -> Generator[Player, Any, None]:
+    def round_participants_iter(self, offset: int) -> G[Player]:
         '''
         Returns a generator that yields all non-ejected round participants in turn order, starting offset players after (in turn order) the active player.
         '''
@@ -159,14 +163,14 @@ class Table[T]:
 
 
     @property
-    def starting_with_you(self) -> Generator[Player, Any, None]:
+    def starting_with_you(self) -> G[Player]:
         '''
         Iterates through all round participants, starting with the active player.
         '''
         return self.round_participants_iter(0)
 
     @property
-    def starting_after_you(self) -> Generator[Player, Any, None]:
+    def starting_after_you(self) -> G[Player]:
         '''
         Iterates through all round participants in turn order, starting with the player who is next after the active player.
         This will thus have the active player last in the iteration

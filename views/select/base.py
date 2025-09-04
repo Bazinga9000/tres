@@ -1,8 +1,9 @@
-from typing import override
 from discord import Interaction
 from discord.ui import Select, View
 
 from util.event import Event
+
+from typing import override
 
 
 class BaseSelect(Select[View]):

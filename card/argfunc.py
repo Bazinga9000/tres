@@ -3,11 +3,8 @@ from functools import wraps
 from .argument import Argument, ArgumentBase
 
 from typing import Callable, Concatenate
+from typeutils import F, Factory
 
-
-# TODO: make these typing aliases more global
-type F[**P, T] = Callable[P, T]
-type Factory[T] = F[[], T]
 
 class ArgFunc[S, *Ts, T]:
     type Inner[X] = Callable[[*Ts, T], None] | ArgFunc[S, *Ts, T, X]

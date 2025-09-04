@@ -1,20 +1,22 @@
 from dataclasses import dataclass
-from typing import Callable, Self
+
+from typing import Self
+from typeutils import Action
 
 
-
-@dataclass(frozen=True, eq=False) # hashing should be id-based, not value-based
+@dataclass(frozen=True, eq=False) # ensures hashing is id-based, not value-based
 class EventHandler[**P]:
-    func: Callable[P, None]
+    func: Action[P]
     
     def __repr__(self):
         return f"EventHandler({self.func.__name__})"
 
 class Event[**P]:
-    def __init__(self):
+    def __init__(self, func: Action[P] | None = None):
         self._handlers: list[EventHandler[P]] = list()
+        self += func
     
-    def subscribe(self, func: Callable[P, None]) -> EventHandler[P]:
+    def subscribe(self, func: Action[P]) -> EventHandler[P]:
         handler = EventHandler(func)
         self._handlers.append(handler)
         return handler
@@ -35,7 +37,7 @@ class Event[**P]:
     def __call__(self, *args: P.args, **kwargs: P.kwargs):
         self.fire(*args, **kwargs)
     
-    def __iadd__(self, func: Callable[P, None] | None) -> Self:
+    def __iadd__(self, func: Action[P] | None) -> Self:
         if func:
             self.subscribe(func)
         return self
@@ -43,8 +45,3 @@ class Event[**P]:
     def __isub__(self, handler: EventHandler[P]) -> Self:
         self.unsubscribe(handler)
         return self
-
-def event[**P](func: Callable[P, None]) -> Event[P]:
-    event = Event[P]()
-    event += func
-    return event

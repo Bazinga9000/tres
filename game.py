@@ -1,15 +1,17 @@
-from collections.abc import Callable
-from typing import Coroutine
-import discord
-import game_db
-from pregame import PreGame
-from game_components import Player
-from views.cardview import CardView
-import game_components.decks as decks
-import util.image_util
 import io
+
+import discord
 from PIL import Image
-from game_components import Table
+
+import game_components.decks as decks
+import game_db
+import util.image_util
+from game_components import Player, Table
+from pregame import PreGame
+from views.cardview import CardView
+
+from typeutils import AF
+
 
 class Game:
     type Player = Player[Game]
@@ -157,7 +159,7 @@ class TurnTrackingView(discord.ui.View):
         return (self.game.round, self.game.turn) != (self.round, self.turn)
 
     # Delete the entire message if the interaction is done out of turn
-    def delete_out_of_turn(self, cb: Callable[[discord.Interaction], Coroutine[None, None, None]]):
+    def delete_out_of_turn(self, cb: AF[[discord.Interaction], None]):
         async def wrapper(interaction: discord.Interaction):
             if self.is_bad():
                 # This view is no longer required. Kill the message!
@@ -169,7 +171,7 @@ class TurnTrackingView(discord.ui.View):
         return wrapper
 
     # Empty the view if the interaction is done out of turn, but do not delete the message
-    def empty_out_of_turn(self, cb: Callable[[discord.Interaction], Coroutine[None, None, None]]):
+    def empty_out_of_turn(self, cb: AF[[discord.Interaction], None]):
         async def wrapper(interaction: discord.Interaction):
             if self.is_bad():
                 # This view is no longer required. Remove it from the message!

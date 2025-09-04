@@ -1,14 +1,14 @@
-from typing import TYPE_CHECKING, Any, override
 from uuid import UUID
 
 from discord import ButtonStyle, SelectOption
 from discord.interactions import Interaction
 from discord.ui import Button, Item, View
 
-from card.argument import ArgumentBase
-
 from .select.base import BaseSelect
 from .select.typed import TypedSelect
+from card.argument import ArgumentBase
+
+from typing import TYPE_CHECKING, Any, override
 
 if TYPE_CHECKING:
     from game import Game

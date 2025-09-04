@@ -9,7 +9,8 @@ from .color import ALL_COLORS, CardColor
 from .option import Option
 from game_components.player import Player
 
-from typing import TYPE_CHECKING, Callable, Any
+from typing import TYPE_CHECKING, Any
+from typeutils import F, Factory
 
 if TYPE_CHECKING:
     from game import Game
@@ -25,8 +26,8 @@ def card(
     number_value : int = 0,
     rules: str | None = None
 ): # TODO: ParamSpec this for things like number cards -cap
-    def decorator(fun: ArgFunc[Game, Game].Inner) -> Callable[[CardColor], Card[Game]]:
-        get_game: Callable[[Game], Argument[Game]] = lambda g: Argument(placeholder='', options=(), default=g)
+    def decorator(fun: ArgFunc[Game, Game].Inner) -> F[[CardColor], Card[Game]]:
+        get_game: F[[Game], Argument[Game]] = lambda g: Argument(placeholder='', options=(), default=g)
         on_play = ArgFunc(fun, get_game)
         on_draw = ArgFunc(lambda g: None, get_game)
         
@@ -277,7 +278,7 @@ def apply_wild(game: Game, color: CardColor):
 
 
 def constant_color(color: CardColor):
-    def decorator(fun: Callable[[CardColor], Card[Game]]) -> Callable[[], Card[Game]]:
+    def decorator(fun: F[[CardColor], Card[Game]]) -> Factory[Card[Game]]:
         @wraps(fun)
         def wrapper():
             return fun(color)
