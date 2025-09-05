@@ -96,8 +96,6 @@ class CardView(View):
             self.add_item(pile_select)
             
             def build_select(argument: ArgumentBase):
-                print(argument)
-                print(argument.options)
                 if argument.options:
                     select = BaseSelect()
                     select.placeholder = argument.placeholder
